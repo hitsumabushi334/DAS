@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git config *)",
+      "Bash(brew install *)",
+      "Bash(chmod 777 *)",
+      "Bash(rm -rf /*)",
+      "Bash(gh repo delete:*)",
+      "Bash(pip install *)"
+      // ... 他の危険なコマンド
+    ]
+  },
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$env:USERPROFILE\\.claude\\hooks\\hook_pre_commands.ps1"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "PostToolUse": [
+          {
+            "matcher": "Bash",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "echo \"[$(Get-Date)] $env:USERNAME: $(echo $env:TOOL_INPUT | jq -r '.tool_input.command')\" >> \"$env:USERPROFILE\\.claude\\command_history.log\""
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
