@@ -36,7 +36,7 @@
   "remoteUser": "node",
   "mounts": [
     "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.claude,target=/home/node/.claude,type=bind",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.clasprc.json,target=/home/node/.clasprc.json,type=bind"
   ],
   "remoteEnv": {
