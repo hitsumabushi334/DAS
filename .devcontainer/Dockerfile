@@ -21,6 +21,7 @@ RUN apt update && apt install -y less \
   aggregate \
   jq
 
+
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
   chown -R node:node /usr/local/share
@@ -70,9 +71,20 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 RUN npm install -g @anthropic-ai/claude-code @google/clasp prettier
 
 # Copy and set up firewall script
-COPY init-firewall.sh /usr/local/bin/
 USER root
+
+COPY .devcontainer/init-firewall.sh /usr/local/bin/init-firewall.sh
+COPY .devcontainer/scripts /home/node/scripts/
+
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
+  chown node:node /usr/local/bin/init-firewall.sh && \
+  chown -R node:node /home/node/scripts && \
+  chmod +x /home/node/scripts/deny-check.sh && \
+  chmod +x /home/node/scripts/discord_notification.sh && \
+  sed -i 's/\r$//' /home/node/scripts/deny-check.sh && \
+  sed -i 's/\r$//' /home/node/scripts/discord_notification.sh && \
+  sed -i 's/\r$//' /usr/local/bin/init-firewall.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
+  echo "node ALL=(root) NOPASSWD: /usr/bin/chmod +x /home/node/scripts/deny-check.sh" >> /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node

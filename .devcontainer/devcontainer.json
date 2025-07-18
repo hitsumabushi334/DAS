@@ -2,6 +2,7 @@
   "name": "Claude Code Sandbox for GAS",
   "build": {
     "dockerfile": "Dockerfile",
+    "context": "..",
     "args": {
       "TZ": "${localEnv:TZ:America/Los_Angeles}"
     }
@@ -46,5 +47,5 @@
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "sudo ${localWorkspaceFolder}/.devcontainer/init-firewall.sh"
+  "postCreateCommand": "sudo /usr/local/bin/init-firewall.sh"
 }

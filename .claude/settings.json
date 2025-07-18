@@ -6,43 +6,38 @@
       "Bash(chmod 777 *)",
       "Bash(rm -rf /*)",
       "Bash(gh repo delete:*)",
-      "Bash(pip install *)"
-      // ... 他の危険なコマンド
+      "Bash(pip install *)",
+      "Bash(npm install *)"
     ]
   },
   "hooks": {
-    "preToolUse": [
+    "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "$env:USERPROFILE\\.claude\\hooks\\hook_pre_commands.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "PostToolUse": [
-          {
-            "matcher": "Bash",
-            "hooks": [
-              {
-                "type": "command",
-                "command": "echo \"[$(Get-Date)] $env:USERNAME: $(echo $env:TOOL_INPUT | jq -r '.tool_input.command')\" >> \"$env:USERPROFILE\\.claude\\command_history.log\""
-              }
-            ]
+            "command": "~/scripts/deny-check.sh"
           }
         ]
       }
     ],
     "PostToolUse": [
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date)] $USER: $(echo $TOOL_INPUT | jq -r '.tool_input.command')\" >> \"$HOME/.claude/command_history.log\""
+          }
+        ]
+      },
+      {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path | select(endswith(\".js\") or endswith(\".ts\"))' | xargs -r prettier --write"
+            "command": "jq -r '.tool_input.file_path | select(endswith(\".js\") or endswith(\".ts\") or endswith(\".jsx\") or endswith(\".tsx\"))' | xargs -r npx prettier --write"
           }
         ]
       },
@@ -52,6 +47,30 @@
           {
             "type": "command",
             "command": "jq -r '.tool_input.file_path | select(endswith(\".py\"))' | xargs -r black --quiet"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo printf '\\a'"
+          },
+          {
+            "type": "command",
+            "command": "printf '\\\\n🔔 フックの実行が完了しました！\\\\n\\\\n'"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/scripts/discord_notification.sh"
           }
         ]
       }
