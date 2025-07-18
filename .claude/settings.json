@@ -17,12 +17,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$env:USERPROFILE\\.claude\\hooks\\hook_pre_commands.ps1"
+            "command": "$env:USERPROFILE\\.claude\\hooks\\hook_pre_commands.sh"
           }
         ]
-      }
-    ],
-    "PreToolUse": [
+      },
       {
         "matcher": "Write|Edit",
         "PostToolUse": [
@@ -34,6 +32,26 @@
                 "command": "echo \"[$(Get-Date)] $env:USERNAME: $(echo $env:TOOL_INPUT | jq -r '.tool_input.command')\" >> \"$env:USERPROFILE\\.claude\\command_history.log\""
               }
             ]
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path | select(endswith(\".js\") or endswith(\".ts\"))' | xargs -r prettier --write"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path | select(endswith(\".py\"))' | xargs -r black --quiet"
           }
         ]
       }
