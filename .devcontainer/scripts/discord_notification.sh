@@ -17,6 +17,22 @@ if [ -f "$TRANSCRIPT_PATH" ]; then
     done)
 fi
 
+# ---で囲まれた作業内容を抽出する関数
+extract_work_summary() {
+    local message="$1"
+    if [[ "$message" =~ ---([^-]+)--- ]]; then
+        echo "${BASH_REMATCH[1]}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    else
+        echo ""
+    fi
+}
+
+# 作業内容の抽出
+WORK_SUMMARY=""
+if [ -n "$LAST_MESSAGE" ]; then
+    WORK_SUMMARY=$(extract_work_summary "$LAST_MESSAGE")
+fi
+
 # デバッグログ
 DEBUG_LOG="/tmp/discord-notification-debug.log"
 echo "=== $(date) ===" >> "$DEBUG_LOG"
@@ -106,18 +122,19 @@ MEMORY_INFO=$(free -h | awk 'NR==2{print $3"/"$2}' 2>/dev/null || echo "不明")
 # 詳細なメッセージを作成
 MESSAGE="🎯 **Claude Code 作業完了レポート**
 
+${WORK_SUMMARY:+📋 **作業内容**:
+${WORK_SUMMARY}
+}
+
 ⏰ **完了時刻**: ${TIMESTAMP}
 👤 **ユーザー**: ${USER}
 📁 **作業場所**: ${FULL_PATH}
 🌿 **ブランチ**: ${BRANCH}
 ${SESSION_DURATION:+⌛ **セッション**: ${SESSION_DURATION}}
 
-${LAST_MESSAGE:+🤖 **最新の作業内容**:
-${LAST_MESSAGE}}
 
-📈 **システム情報**:
-💾 ディスク使用量: ${DISK_USAGE}
-🧠 メモリ使用量: ${MEMORY_INFO}
+
+
 
 📊 **ファイル変更情報**:
 ${FILE_STATS:-"変更なし"}
