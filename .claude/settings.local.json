@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "mcp__human-in-the-loop__ask_human",
-      "mcp__playwright__browser_navigate"
+      "mcp__playwright__browser_navigate",
+      "WebFetch(domain:zenn.dev)",
+      "Bash(ls:*)"
     ]
   },
   "enabledMcpjsonServers": [
