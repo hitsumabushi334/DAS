@@ -4,7 +4,7 @@
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 
-
+INPUT=$(cat)
 # トランスクリプトを処理（.jsonl形式に対応）
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path')
 if [ -f "$TRANSCRIPT_PATH" ]; then
@@ -17,25 +17,49 @@ if [ -f "$TRANSCRIPT_PATH" ]; then
     done)
 fi
 
-# ---で囲まれた作業内容を抽出する関数
+# ---で囲まれた作業内容を抽出する関数（新フォーマット対応）
 extract_work_summary() {
     local message="$1"
-    if [[ "$message" =~ ---([^-]+)--- ]]; then
-        echo "${BASH_REMATCH[1]}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+    local work_summary=""
+    
+    # 新フォーマットの検出と抽出: ---\n作業完了報告:\n内容\n---
+    if echo "$message" | grep -q "作業完了報告:"; then
+        # awk使用でより確実な抽出
+        work_summary=$(echo "$message" | awk '
+            /^---$/ && !in_block {in_block=1; next}
+            /作業完了報告:/ && in_block {in_report=1; next}
+            /^---$/ && in_report {exit}
+            in_report {print}
+        ')
     else
-        echo ""
+        # 従来フォーマット: ---内容---（1行）
+        if [[ "$message" =~ ---([^-]+)--- ]]; then
+            work_summary="${BASH_REMATCH[1]}"
+        fi
     fi
+    
+    # 前後の空白削除
+    echo "$work_summary" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
 }
+
+# デバッグログ
+DEBUG_LOG="/tmp/discord-notification-debug.log"
+echo "=== $(date) ===" >> "$DEBUG_LOG"
+echo "INPUT: $INPUT" >> "$DEBUG_LOG"
+echo "TRANSCRIPT_PATH: $TRANSCRIPT_PATH" >> "$DEBUG_LOG"
 
 # 作業内容の抽出
 WORK_SUMMARY=""
 if [ -n "$LAST_MESSAGE" ]; then
     WORK_SUMMARY=$(extract_work_summary "$LAST_MESSAGE")
+    # デバッグ情報を追加
+    echo "LAST_MESSAGE length: ${#LAST_MESSAGE}" >> "$DEBUG_LOG"
+    echo "LAST_MESSAGE preview: $(echo "$LAST_MESSAGE" | head -3)" >> "$DEBUG_LOG"
+    echo "WORK_SUMMARY: '$WORK_SUMMARY'" >> "$DEBUG_LOG"
+else
+    echo "LAST_MESSAGE is empty" >> "$DEBUG_LOG"
 fi
 
-# デバッグログ
-DEBUG_LOG="/tmp/discord-notification-debug.log"
-echo "=== $(date) ===" >> "$DEBUG_LOG"
 echo "Script started with LC_ALL=$LC_ALL" >> "$DEBUG_LOG"
 
 if [ "$stop_hook_active" = "true" ]; then
