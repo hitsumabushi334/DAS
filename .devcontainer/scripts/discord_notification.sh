@@ -112,6 +112,9 @@ MESSAGE="🎯 **Claude Code 作業完了レポート**
 🌿 **ブランチ**: ${BRANCH}
 ${SESSION_DURATION:+⌛ **セッション**: ${SESSION_DURATION}}
 
+${LAST_MESSAGE:+🤖 **最新の作業内容**:
+${LAST_MESSAGE}}
+
 📈 **システム情報**:
 💾 ディスク使用量: ${DISK_USAGE}
 🧠 メモリ使用量: ${MEMORY_INFO}
@@ -121,8 +124,6 @@ ${FILE_STATS:-"変更なし"}
 
 ${CHANGED_FILES}
 
-${LAST_MESSAGE:+🤖 **最新の作業内容**:
-${LAST_MESSAGE}}
 
 ✨ **作業お疲れ様でした！**"
 
