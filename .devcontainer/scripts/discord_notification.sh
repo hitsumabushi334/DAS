@@ -11,6 +11,7 @@ if [ -f "$TRANSCRIPT_PATH" ]; then
     # 最後のアシスタントメッセージのみを取得
     LAST_MESSAGE=$(tac "$TRANSCRIPT_PATH" | while IFS= read -r line; do
         if echo "$line" | jq -e '.type == "assistant"' >/dev/null 2>&1; then
+            # メッセージ内容を抽出
             echo "$line" | jq -r '.message.content[] | select(.type == "text") | .text'
             break
         fi
@@ -48,6 +49,10 @@ echo "=== $(date) ===" >> "$DEBUG_LOG"
 echo "INPUT: $INPUT" >> "$DEBUG_LOG"
 echo "TRANSCRIPT_PATH: $TRANSCRIPT_PATH" >> "$DEBUG_LOG"
 
+# フックイベントタイプを抽出
+HOOK_EVENT=$(echo "$INPUT" | jq -r '.hook_event_name // "unknown"')
+echo "HOOK_EVENT: $HOOK_EVENT" >> "$DEBUG_LOG"
+
 # 作業内容の抽出
 WORK_SUMMARY=""
 if [ -n "$LAST_MESSAGE" ]; then
@@ -61,6 +66,12 @@ else
 fi
 
 echo "Script started with LC_ALL=$LC_ALL" >> "$DEBUG_LOG"
+
+# フックイベントタイプに応じた処理
+if [ "$HOOK_EVENT" = "stop" ]; then
+    echo "Hook event is 'stop', exiting normally" >> "$DEBUG_LOG"
+    exit 0
+fi
 
 if [ "$stop_hook_active" = "true" ]; then
     echo "stop_hook_active is true, exiting" >> "$DEBUG_LOG"
@@ -143,8 +154,20 @@ fi
 DISK_USAGE=$(df -h . | awk 'NR==2 {print $5}' 2>/dev/null || echo "不明")
 MEMORY_INFO=$(free -h | awk 'NR==2{print $3"/"$2}' 2>/dev/null || echo "不明")
 
-# 詳細なメッセージを作成
-MESSAGE="---
+# フックイベントタイプに応じたメッセージを作成
+if [ "$HOOK_EVENT" = "notification" ]; then
+    MESSAGE="----------------------
+    🔔 **Claude が承認を求めています**
+
+⏰ **時刻**: ${TIMESTAMP}
+👤 **ユーザー**: ${USER}
+📁 **作業場所**: ${FULL_PATH}
+🌿 **ブランチ**: ${BRANCH}
+
+📋 **操作の確認が必要です**"
+else
+    # 通常の作業完了レポート
+    MESSAGE="--------------------------
 🎯 **Claude Code 作業完了レポート**
 
 ${WORK_SUMMARY:+📋 **作業内容**:
@@ -157,6 +180,7 @@ ${WORK_SUMMARY}
 🌿 **ブランチ**: ${BRANCH}
 
 ✨ **作業お疲れ様でした！**"
+fi
 
 echo "Detailed message prepared" >> "$DEBUG_LOG"
 echo "Message length: ${#MESSAGE}" >> "$DEBUG_LOG"

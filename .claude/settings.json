@@ -74,6 +74,17 @@
           }
         ]
       }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/scripts/discord_notification.sh"
+          }
+        ]
+      }
     ]
   }
 }
