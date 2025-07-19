@@ -4,6 +4,19 @@
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 
+
+# トランスクリプトを処理（.jsonl形式に対応）
+TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path')
+if [ -f "$TRANSCRIPT_PATH" ]; then
+    # 最後のアシスタントメッセージのみを取得
+    LAST_MESSAGE=$(tac "$TRANSCRIPT_PATH" | while IFS= read -r line; do
+        if echo "$line" | jq -e '.type == "assistant"' >/dev/null 2>&1; then
+            echo "$line" | jq -r '.message.content[] | select(.type == "text") | .text'
+            break
+        fi
+    done)
+fi
+
 # デバッグログ
 DEBUG_LOG="/tmp/discord-notification-debug.log"
 echo "=== $(date) ===" >> "$DEBUG_LOG"
@@ -107,6 +120,9 @@ ${SESSION_DURATION:+⌛ **セッション**: ${SESSION_DURATION}}
 ${FILE_STATS:-"変更なし"}
 
 ${CHANGED_FILES}
+
+${LAST_MESSAGE:+🤖 **最新の作業内容**:
+${LAST_MESSAGE}}
 
 ✨ **作業お疲れ様でした！**"
 
