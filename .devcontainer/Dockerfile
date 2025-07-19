@@ -19,7 +19,8 @@ RUN apt update && apt install -y less \
   iproute2 \
   dnsutils \
   aggregate \
-  jq
+  jq \
+  build-essential
 
 
 # Ensure default node user has access to /usr/local/share
@@ -51,6 +52,13 @@ RUN ARCH=$(dpkg --print-architecture) && \
 # Set up non-root user
 USER node
 
+# ---- START: Added for human-in-the-loop ----
+# Install Rust (as node user)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Add Rust to the PATH for subsequent commands
+ENV PATH="/home/node/.cargo/bin:${PATH}"
+# ---- END: Added for human-in-the-loop ----
+
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PATH=$PATH:/usr/local/share/npm-global/bin
@@ -67,8 +75,13 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
   -a "export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
   -x
 
-# Install Claude
+# Install Claude and other npm packages
 RUN npm install -g @anthropic-ai/claude-code @google/clasp prettier
+
+# ---- START: Added for human-in-the-loop ----
+# Install human-in-the-loop MCP server using cargo
+RUN cargo install --git https://github.com/KOBA789/human-in-the-loop.git
+# ---- END: Added for human-in-the-loop ----
 
 # Copy and set up firewall script
 USER root
@@ -81,6 +94,7 @@ RUN chmod +x /usr/local/bin/init-firewall.sh && \
   chown -R node:node /home/node/scripts && \
   chmod +x /home/node/scripts/deny-check.sh && \
   chmod +x /home/node/scripts/discord_notification.sh && \
+  # Ensure all scripts have correct line endings
   sed -i 's/\r$//' /home/node/scripts/deny-check.sh && \
   sed -i 's/\r$//' /home/node/scripts/discord_notification.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \

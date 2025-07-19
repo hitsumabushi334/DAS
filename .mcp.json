@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "human-in-the-loop": {
+      "command": "human-in-the-loop",
+      "args": [
+        "--discord-channel-id",
+        "1395945784058314774",
+        "--discord-user-id",
+        "614248436396458025"
+      ]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {}
+    }
+  }
+}
