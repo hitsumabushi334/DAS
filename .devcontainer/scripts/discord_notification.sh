@@ -144,7 +144,8 @@ DISK_USAGE=$(df -h . | awk 'NR==2 {print $5}' 2>/dev/null || echo "不明")
 MEMORY_INFO=$(free -h | awk 'NR==2{print $3"/"$2}' 2>/dev/null || echo "不明")
 
 # 詳細なメッセージを作成
-MESSAGE="🎯 **Claude Code 作業完了レポート**
+MESSAGE="---
+🎯 **Claude Code 作業完了レポート**
 
 ${WORK_SUMMARY:+📋 **作業内容**:
 ${WORK_SUMMARY}
@@ -154,17 +155,6 @@ ${WORK_SUMMARY}
 👤 **ユーザー**: ${USER}
 📁 **作業場所**: ${FULL_PATH}
 🌿 **ブランチ**: ${BRANCH}
-${SESSION_DURATION:+⌛ **セッション**: ${SESSION_DURATION}}
-
-
-
-
-
-📊 **ファイル変更情報**:
-${FILE_STATS:-"変更なし"}
-
-${CHANGED_FILES}
-
 
 ✨ **作業お疲れ様でした！**"
 
