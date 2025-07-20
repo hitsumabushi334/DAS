@@ -7,7 +7,14 @@
       "Bash(rm -rf /*)",
       "Bash(gh repo delete:*)",
       "Bash(pip install *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(dd if=/dev/zero of=/dev/sda bs=1M *)",
+      "Bash(* >/dev/sd*)",
+      "Bash(kill -9 -1)",
+      "Bash(wget *)",
+      "Bash(shutdown *)",
+      "Bash(reboot *)",
+      "Bash(systemctl poweroff)"
     ]
   },
   "hooks": {
@@ -52,19 +59,6 @@
       }
     ],
     "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo printf '\\a'"
-          },
-          {
-            "type": "command",
-            "command": "printf '\\\\n🔔 フックの実行が完了しました！\\\\n\\\\n'"
-          }
-        ]
-      },
       {
         "matcher": "",
         "hooks": [
