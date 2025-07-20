@@ -7,6 +7,8 @@
 - 常に日本語で応答する
 - 不明な点があれば人間に確認する（human-in-the-loop ツール使用）
 - 必要に応じて Web 検索を活用する
+- @要件定義書.md 及び@作業計画書.md に従って実装すること
+- api リファレンスとして@dify-api を参照すること
 
 ### 開発原則
 
@@ -99,7 +101,7 @@ clasp create [scriptTitle] # 新しい Apps Script プロジェクトを作成�
 
 ```
 /workspace/
-├── src/         # ソースコード
+├── main.js         # ソースコード
 ├── docs/        # ドキュメント
 ├── tests/       # テストファイル
 └── CLAUDE.md    # 設定ファイル
