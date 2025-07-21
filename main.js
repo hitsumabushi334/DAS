@@ -28,6 +28,13 @@ Chatbot.prototype.sendMessage = function (query, user, options) {
     throw new Error("query と user は必須パラメータです");
   }
 
+  // Google Apps Script環境ではストリーミングモードはサポートされていません
+  if (options && options.response_mode === "streaming") {
+    throw new Error(
+      "Google Apps Script環境ではストリーミングモードはサポートされていません。response_modeを省略するかblockingを指定してください。",
+    );
+  }
+
   var payload = {
     query: query,
     user: user,
@@ -184,6 +191,7 @@ Chatbot.prototype.uploadFile = function (file, user) {
       Authorization: "Bearer " + this.apiKey,
     },
     payload: formData,
+    muteHttpExceptions: true,
   };
 
   var response = UrlFetchApp.fetch(this.baseUrl + "/files/upload", options);
@@ -264,6 +272,7 @@ Chatbot.prototype.textToAudio = function (user, options) {
       "Content-Type": "application/json",
     },
     payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
   };
 
   var response = UrlFetchApp.fetch(
@@ -300,6 +309,7 @@ Chatbot.prototype.audioToText = function (file, user) {
       Authorization: "Bearer " + this.apiKey,
     },
     payload: formData,
+    muteHttpExceptions: true,
   };
 
   var response = UrlFetchApp.fetch(this.baseUrl + "/audio-to-text", options);
@@ -346,11 +356,12 @@ Chatbot.prototype._makeRequest = function (endpoint, method, payload) {
     method: method,
     headers: {
       Authorization: "Bearer " + this.apiKey,
-      "Content-Type": "application/json",
     },
+    muteHttpExceptions: true,
   };
 
   if (payload && method !== "GET") {
+    options.headers["Content-Type"] = "application/json";
     options.payload = JSON.stringify(payload);
   }
 
@@ -367,11 +378,14 @@ Chatbot.prototype._makeRequest = function (endpoint, method, payload) {
         errorInfo = { message: responseText };
       }
 
+      var safeErrorMessage = (
+        errorInfo.message ||
+        errorInfo.error ||
+        responseText
+      ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
+
       throw new Error(
-        "API エラー (HTTP " +
-          responseCode +
-          "): " +
-          (errorInfo.message || errorInfo.error || responseText),
+        "API エラー (HTTP " + responseCode + "): " + safeErrorMessage,
       );
     }
 
