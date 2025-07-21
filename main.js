@@ -52,7 +52,17 @@ class Chatbot {
 
     // ストリーミングモードの場合
     if (payload.response_mode === "streaming") {
-      const response = this._makeRequest("/chat-messages", "POST", payload);
+      // ストリーミング用の特別な処理
+      const url = this.baseUrl + "/chat-messages";
+      const options = {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + this.apiKey,
+          "Content-Type": "application/json",
+        },
+        payload: JSON.stringify(payload),
+      };
+      const response = UrlFetchApp.fetch(url, options);
       return this._parseStreamingResponse(response);
     }
 
@@ -377,13 +387,16 @@ class Chatbot {
             switch (json.event) {
               case "workflow_started":
                 Logger.log("workflow_started");
+                break;
               case "workflow_finished":
                 Logger.log("workflow_finished");
+                break;
               case "node_finished":
                 Logger.log("node_finished");
                 if (json.data.title == "終了") {
                   answer = json.data.outputs.text;
                 }
+                break;
               default:
                 Logger.log(
                   "Event: " + json.event + ", title: " + json.data.title
@@ -395,10 +408,15 @@ class Chatbot {
         }
       }
     } else {
-      Logger.log("API call failed with response code: " + responseCode);
-      Logger.log("Error message: " + responseBody);
+      Logger.log("Error message: " + response.getContentText());
+      throw new Error(
+        "ストリーミングAPIエラー (HTTP " +
+          responseCode +
+          "): " +
+          response.getContentText()
+      );
     }
-    return answer;
+    return { answer: answer };
   }
 
   /**
