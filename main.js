@@ -61,6 +61,7 @@ class Chatbot {
           "Content-Type": "application/json",
         },
         payload: JSON.stringify(payload),
+        muteHttpExceptions: true,
       };
       const response = UrlFetchApp.fetch(url, options);
       return this._parseStreamingResponse(response);
@@ -436,6 +437,7 @@ class Chatbot {
         Authorization: "Bearer " + this.apiKey,
         "Content-Type": "application/json",
       },
+      muteHttpExceptions: true,
     };
 
     if (payload && method !== "GET") {
