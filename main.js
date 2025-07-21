@@ -126,7 +126,7 @@ class Chatbot {
 
     return this._makeRequest(
       "/conversations/" + conversationId + "/messages?" + queryString,
-      "GET"
+      "GET",
     );
   }
 
@@ -150,7 +150,7 @@ class Chatbot {
     return this._makeRequest(
       "/conversations/" + conversationId,
       "PATCH",
-      payload
+      payload,
     );
   }
 
@@ -170,7 +170,7 @@ class Chatbot {
 
     return this._makeRequest(
       "/conversations/" + conversationId + "?" + queryString,
-      "DELETE"
+      "DELETE",
     );
   }
 
@@ -196,6 +196,7 @@ class Chatbot {
         Authorization: "Bearer " + this.apiKey,
       },
       payload: formData,
+      muteHttpExceptions: true,
     };
 
     const response = UrlFetchApp.fetch(this.baseUrl + "/files/upload", options);
@@ -204,8 +205,15 @@ class Chatbot {
       response.getResponseCode() !== 200 &&
       response.getResponseCode() !== 201
     ) {
+      let errorInfo;
+      try {
+        errorInfo = JSON.parse(response.getContentText());
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
       throw new Error(
-        "ファイルアップロードエラー: " + response.getContentText()
+        "ファイルアップロードエラー: " +
+          (errorInfo.message || errorInfo.error || response.getContentText()),
       );
     }
 
@@ -236,7 +244,7 @@ class Chatbot {
     return this._makeRequest(
       "/messages/" + messageId + "/feedbacks",
       "POST",
-      payload
+      payload,
     );
   }
 
@@ -284,7 +292,7 @@ class Chatbot {
 
     const response = UrlFetchApp.fetch(
       this.baseUrl + "/text-to-audio",
-      requestOptions
+      requestOptions,
     );
 
     if (response.getResponseCode() !== 200) {
@@ -316,15 +324,25 @@ class Chatbot {
         Authorization: "Bearer " + this.apiKey,
       },
       payload: formData,
+      muteHttpExceptions: true,
     };
 
     const response = UrlFetchApp.fetch(
       this.baseUrl + "/audio-to-text",
-      options
+      options,
     );
 
     if (response.getResponseCode() !== 200) {
-      throw new Error("音声テキスト変換エラー: " + response.getContentText());
+      let errorInfo;
+      try {
+        errorInfo = JSON.parse(response.getContentText());
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
+      throw new Error(
+        "音声テキスト変換エラー: " +
+          (errorInfo.message || errorInfo.error || response.getContentText()),
+      );
     }
 
     return JSON.parse(response.getContentText());
@@ -346,7 +364,7 @@ class Chatbot {
     return this._makeRequest(
       "/chat-messages/" + taskId + "/stop",
       "POST",
-      payload
+      payload,
     );
   }
 
@@ -359,7 +377,8 @@ class Chatbot {
   _buildQueryString(params) {
     return Object.keys(params)
       .map(
-        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+        (key) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
       )
       .join("&");
   }
@@ -400,7 +419,7 @@ class Chatbot {
                 break;
               default:
                 Logger.log(
-                  "Event: " + json.event + ", title: " + json.data.title
+                  "Event: " + json.event + ", title: " + json.data.title,
                 );
             }
           } catch (e) {
@@ -414,7 +433,7 @@ class Chatbot {
         "ストリーミングAPIエラー (HTTP " +
           responseCode +
           "): " +
-          response.getContentText()
+          response.getContentText(),
       );
     }
     return { answer: answer };
@@ -457,11 +476,14 @@ class Chatbot {
           errorInfo = { message: responseText };
         }
 
+        // セキュリティのためAPI keyが含まれる可能性のあるエラーメッセージをサニタイズ
+        const safeErrorMessage = (
+          errorInfo.message ||
+          errorInfo.error ||
+          responseText
+        ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
         throw new Error(
-          "API エラー (HTTP " +
-            responseCode +
-            "): " +
-            (errorInfo.message || errorInfo.error || responseText)
+          "API エラー (HTTP " + responseCode + "): " + safeErrorMessage,
         );
       }
 
