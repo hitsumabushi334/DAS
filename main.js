@@ -9,7 +9,7 @@
 class Chatbot {
   constructor(apiKey, baseUrl) {
     this.apiKey = apiKey;
-    this.baseUrl = baseUrl || 'https://api.dify.ai/v1';
+    this.baseUrl = baseUrl || "https://api.dify.ai/v1";
   }
 
   /**
@@ -29,34 +29,35 @@ class Chatbot {
    */
   sendMessage(query, user, options) {
     if (!query || !user) {
-      throw new Error('query と user は必須パラメータです');
+      throw new Error("query と user は必須パラメータです");
     }
-    
+
     options = options || {};
-    
+
     const payload = {
       query: query,
       user: user,
       inputs: options.inputs || {},
-      response_mode: options.response_mode || 'blocking',
-      auto_generate_name: options.auto_generate_name !== false
+      response_mode: options.response_mode || "blocking",
+      auto_generate_name: options.auto_generate_name !== false,
     };
-    
+
     if (options.conversation_id) {
       payload.conversation_id = options.conversation_id;
     }
-    
+
     if (options.files) {
       payload.files = options.files;
     }
-    
+
     // ストリーミングモードの場合
-    if (payload.response_mode === 'streaming') {
-      return this._sendStreamingMessage(payload, options);
+    if (payload.response_mode === "streaming") {
+      const response = this._makeRequest("/chat-messages", "POST", payload);
+      return this._parseStreamingResponse(response);
     }
-    
+
     // ブロッキングモードの場合
-    return this._makeRequest('/chat-messages', 'POST', payload);
+    return this._makeRequest("/chat-messages", "POST", payload);
   }
 
   /**
@@ -70,26 +71,24 @@ class Chatbot {
    */
   getConversations(user, options) {
     if (!user) {
-      throw new Error('user は必須パラメータです');
+      throw new Error("user は必須パラメータです");
     }
-    
+
     options = options || {};
-    
+
     const params = {
       user: user,
       limit: options.limit || 20,
-      sort_by: options.sort_by || '-updated_at'
+      sort_by: options.sort_by || "-updated_at",
     };
-    
+
     if (options.last_id) {
       params.last_id = options.last_id;
     }
-    
-    const queryString = Object.keys(params).map(function(key) {
-      return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-    }).join('&');
-    
-    return this._makeRequest('/conversations?' + queryString, 'GET');
+
+    const queryString = this._buildQueryString(params);
+
+    return this._makeRequest("/conversations?" + queryString, "GET");
   }
 
   /**
@@ -103,20 +102,21 @@ class Chatbot {
    */
   getConversationMessages(conversationId, user, options) {
     if (!conversationId || !user) {
-      throw new Error('conversationId と user は必須パラメータです');
+      throw new Error("conversationId と user は必須パラメータです");
     }
-    
+
     options = options || {};
-    
+
     const params = { user: user };
     if (options.first_id) params.first_id = options.first_id;
     if (options.limit) params.limit = options.limit;
-    
-    const queryString = Object.keys(params).map(function(key) {
-      return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-    }).join('&');
-    
-    return this._makeRequest('/conversations/' + conversationId + '/messages?' + queryString, 'GET');
+
+    const queryString = this._buildQueryString(params);
+
+    return this._makeRequest(
+      "/conversations/" + conversationId + "/messages?" + queryString,
+      "GET"
+    );
   }
 
   /**
@@ -128,15 +128,19 @@ class Chatbot {
    */
   renameConversation(conversationId, name, user) {
     if (!conversationId || !name || !user) {
-      throw new Error('conversationId, name, user は必須パラメータです');
+      throw new Error("conversationId, name, user は必須パラメータです");
     }
-    
+
     const payload = {
       name: name,
-      user: user
+      user: user,
     };
-    
-    return this._makeRequest('/conversations/' + conversationId, 'PATCH', payload);
+
+    return this._makeRequest(
+      "/conversations/" + conversationId,
+      "PATCH",
+      payload
+    );
   }
 
   /**
@@ -147,15 +151,16 @@ class Chatbot {
    */
   deleteConversation(conversationId, user) {
     if (!conversationId || !user) {
-      throw new Error('conversationId と user は必須パラメータです');
+      throw new Error("conversationId と user は必須パラメータです");
     }
-    
+
     const params = { user: user };
-    const queryString = Object.keys(params).map(function(key) {
-      return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-    }).join('&');
-    
-    return this._makeRequest('/conversations/' + conversationId + '?' + queryString, 'DELETE');
+    const queryString = this._buildQueryString(params);
+
+    return this._makeRequest(
+      "/conversations/" + conversationId + "?" + queryString,
+      "DELETE"
+    );
   }
 
   /**
@@ -166,28 +171,33 @@ class Chatbot {
    */
   uploadFile(file, user) {
     if (!file || !user) {
-      throw new Error('file と user は必須パラメータです');
+      throw new Error("file と user は必須パラメータです");
     }
-    
+
     const formData = {
-      'file': file,
-      'user': user
+      file: file,
+      user: user,
     };
-    
+
     const options = {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': 'Bearer ' + this.apiKey
+        Authorization: "Bearer " + this.apiKey,
       },
-      payload: formData
+      payload: formData,
     };
-    
-    const response = UrlFetchApp.fetch(this.baseUrl + '/files/upload', options);
-    
-    if (response.getResponseCode() !== 200 && response.getResponseCode() !== 201) {
-      throw new Error('ファイルアップロードエラー: ' + response.getContentText());
+
+    const response = UrlFetchApp.fetch(this.baseUrl + "/files/upload", options);
+
+    if (
+      response.getResponseCode() !== 200 &&
+      response.getResponseCode() !== 201
+    ) {
+      throw new Error(
+        "ファイルアップロードエラー: " + response.getContentText()
+      );
     }
-    
+
     return JSON.parse(response.getContentText());
   }
 
@@ -200,19 +210,23 @@ class Chatbot {
    */
   sendFeedback(messageId, rating, user) {
     if (!messageId || !rating || !user) {
-      throw new Error('messageId, rating, user は必須パラメータです');
+      throw new Error("messageId, rating, user は必須パラメータです");
     }
-    
-    if (rating !== 'like' && rating !== 'dislike') {
+
+    if (rating !== "like" && rating !== "dislike") {
       throw new Error('rating は "like" または "dislike" である必要があります');
     }
-    
+
     const payload = {
       rating: rating,
-      user: user
+      user: user,
     };
-    
-    return this._makeRequest('/messages/' + messageId + '/feedbacks', 'POST', payload);
+
+    return this._makeRequest(
+      "/messages/" + messageId + "/feedbacks",
+      "POST",
+      payload
+    );
   }
 
   /**
@@ -226,43 +240,46 @@ class Chatbot {
    */
   textToAudio(user, options) {
     if (!user) {
-      throw new Error('user は必須パラメータです');
+      throw new Error("user は必須パラメータです");
     }
-    
+
     options = options || {};
-    
+
     if (!options.message_id && !options.text) {
-      throw new Error('message_id または text のいずれかが必要です');
+      throw new Error("message_id または text のいずれかが必要です");
     }
-    
+
     const payload = {
       user: user,
-      streaming: options.streaming || false
+      streaming: options.streaming || false,
     };
-    
+
     if (options.message_id) {
       payload.message_id = options.message_id;
     }
-    
+
     if (options.text) {
       payload.text = options.text;
     }
-    
+
     const requestOptions = {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': 'Bearer ' + this.apiKey,
-        'Content-Type': 'application/json'
+        Authorization: "Bearer " + this.apiKey,
+        "Content-Type": "application/json",
       },
-      payload: JSON.stringify(payload)
+      payload: JSON.stringify(payload),
     };
-    
-    const response = UrlFetchApp.fetch(this.baseUrl + '/text-to-audio', requestOptions);
-    
+
+    const response = UrlFetchApp.fetch(
+      this.baseUrl + "/text-to-audio",
+      requestOptions
+    );
+
     if (response.getResponseCode() !== 200) {
-      throw new Error('テキスト音声変換エラー: ' + response.getContentText());
+      throw new Error("テキスト音声変換エラー: " + response.getContentText());
     }
-    
+
     return response.getBlob();
   }
 
@@ -274,28 +291,31 @@ class Chatbot {
    */
   audioToText(file, user) {
     if (!file || !user) {
-      throw new Error('file と user は必須パラメータです');
+      throw new Error("file と user は必須パラメータです");
     }
-    
+
     const formData = {
-      'file': file,
-      'user': user
+      file: file,
+      user: user,
     };
-    
+
     const options = {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': 'Bearer ' + this.apiKey
+        Authorization: "Bearer " + this.apiKey,
       },
-      payload: formData
+      payload: formData,
     };
-    
-    const response = UrlFetchApp.fetch(this.baseUrl + '/audio-to-text', options);
-    
+
+    const response = UrlFetchApp.fetch(
+      this.baseUrl + "/audio-to-text",
+      options
+    );
+
     if (response.getResponseCode() !== 200) {
-      throw new Error('音声テキスト変換エラー: ' + response.getContentText());
+      throw new Error("音声テキスト変換エラー: " + response.getContentText());
     }
-    
+
     return JSON.parse(response.getContentText());
   }
 
@@ -307,155 +327,78 @@ class Chatbot {
    */
   stopGeneration(taskId, user) {
     if (!taskId || !user) {
-      throw new Error('taskId と user は必須パラメータです');
+      throw new Error("taskId と user は必須パラメータです");
     }
-    
+
     const payload = { user: user };
-    
-    return this._makeRequest('/chat-messages/' + taskId + '/stop', 'POST', payload);
+
+    return this._makeRequest(
+      "/chat-messages/" + taskId + "/stop",
+      "POST",
+      payload
+    );
   }
 
   /**
-   * ストリーミングメッセージを送信する (内部メソッド)
+   * クエリ文字列を生成する (内部メソッド)
    * @private
-   * @param {Object} payload - リクエストボディ
-   * @param {Object} options - オプション (コールバック関数含む)
-   * @returns {Object} ストリーミング処理の状況
+   * @param {Object} params - パラメータオブジェクト
+   * @returns {string} クエリ文字列
    */
-  _sendStreamingMessage(payload, options) {
-    const url = this.baseUrl + '/chat-messages';
-    
-    const requestOptions = {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + this.apiKey,
-        'Content-Type': 'application/json'
-      },
-      payload: JSON.stringify(payload)
-    };
-    
-    try {
-      const response = UrlFetchApp.fetch(url, requestOptions);
-      const responseCode = response.getResponseCode();
-      
-      if (responseCode !== 200) {
-        const errorText = response.getContentText();
-        let errorInfo;
-        try {
-          errorInfo = JSON.parse(errorText);
-        } catch (e) {
-          errorInfo = { message: errorText };
-        }
-        
-        const error = new Error('API エラー (HTTP ' + responseCode + '): ' + 
-                               (errorInfo.message || errorInfo.error || errorText));
-        
-        if (options.onError) {
-          options.onError(error);
-        } else {
-          throw error;
-        }
-        return { success: false, error: error.message };
-      }
-      
-      // ストリーミングレスポンスを処理
-      const responseText = response.getContentText();
-      return this._parseStreamingResponse(responseText, options);
-      
-    } catch (error) {
-      if (options.onError) {
-        options.onError(error);
-      } else {
-        throw new Error('ストリーミングリクエストエラー: ' + error.message);
-      }
-      return { success: false, error: error.message };
-    }
+  _buildQueryString(params) {
+    return Object.keys(params)
+      .map(
+        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+      )
+      .join("&");
   }
 
   /**
    * ストリーミングレスポンスを解析する (内部メソッド)
    * @private
-   * @param {string} responseText - SSE形式のレスポンステキスト
-   * @param {Object} options - コールバック関数
+   * @param {object} responseText - SSE形式のレスポンステキスト
    * @returns {Object} 解析結果
    */
-  _parseStreamingResponse(responseText, options) {
-    const events = [];
-    let completeAnswer = '';
-    let conversationId = null;
-    let messageId = null;
-    
-    try {
-      // SSE形式のデータを行ごとに分割
-      const lines = responseText.split('\n');
-      let currentEvent = {};
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        
-        if (line === '') {
-          // 空行はイベントの区切り
-          if (currentEvent.data) {
-            try {
-              const eventData = JSON.parse(currentEvent.data);
-              events.push(eventData);
-              
-              // 各イベントタイプに応じた処理
-              if (eventData.event === 'message') {
-                completeAnswer = eventData.answer || '';
-                conversationId = eventData.conversation_id;
-                messageId = eventData.message_id;
-              } else if (eventData.event === 'message_replace') {
-                completeAnswer = eventData.answer || '';
-              } else if (eventData.event === 'message_end') {
-                conversationId = eventData.conversation_id;
-                messageId = eventData.message_id;
-              }
-              
-              // onChunkコールバックを呼び出し
-              if (options.onChunk) {
-                options.onChunk(eventData);
-              }
-              
-            } catch (parseError) {
-              console.warn('SSEイベントの解析エラー:', parseError.message);
+  _parseStreamingResponse(response) {
+    const responseCode = response.getResponseCode();
+
+    if (responseCode === 200) {
+      Logger.log("API call successful");
+
+      const content = response.getContentText();
+      const chunks = content.split("\n\n");
+      let answer = "";
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i].trim();
+        if (chunk.startsWith("data: ")) {
+          try {
+            const json = JSON.parse(chunk.substring(6));
+            switch (json.event) {
+              case "workflow_started":
+                Logger.log("workflow_started");
+              case "workflow_finished":
+                Logger.log("workflow_finished");
+              case "node_finished":
+                Logger.log("node_finished");
+                if (json.data.title == "終了") {
+                  answer = json.data.outputs.text;
+                }
+              default:
+                Logger.log(
+                  "Event: " + json.event + ", title: " + json.data.title
+                );
             }
+          } catch (e) {
+            Logger.log("Error parsing JSON: " + e.toString());
           }
-          currentEvent = {};
-        } else if (line.startsWith('data: ')) {
-          currentEvent.data = line.substring(6);
-        } else if (line.startsWith('event: ')) {
-          currentEvent.event = line.substring(7);
         }
       }
-      
-      // 完了時のコールバック
-      const result = {
-        success: true,
-        answer: completeAnswer,
-        conversation_id: conversationId,
-        message_id: messageId,
-        events: events
-      };
-      
-      if (options.onComplete) {
-        options.onComplete(result);
-      }
-      
-      return result;
-      
-    } catch (error) {
-      const errorResult = {
-        success: false,
-        error: 'ストリーミングレスポンス解析エラー: ' + error.message
-      };
-      
-      if (options.onError) {
-        options.onError(new Error(errorResult.error));
-      }
-      
-      return errorResult;
+    } else {
+      Logger.log("API call failed with response code: " + responseCode);
+      Logger.log("Error message: " + responseBody);
     }
+    return answer;
   }
 
   /**
@@ -468,24 +411,24 @@ class Chatbot {
    */
   _makeRequest(endpoint, method, payload) {
     const url = this.baseUrl + endpoint;
-    
+
     const options = {
       method: method,
       headers: {
-        'Authorization': 'Bearer ' + this.apiKey,
-        'Content-Type': 'application/json'
-      }
+        Authorization: "Bearer " + this.apiKey,
+        "Content-Type": "application/json",
+      },
     };
-    
-    if (payload && method !== 'GET') {
+
+    if (payload && method !== "GET") {
       options.payload = JSON.stringify(payload);
     }
-    
+
     try {
       const response = UrlFetchApp.fetch(url, options);
       const responseCode = response.getResponseCode();
       const responseText = response.getContentText();
-      
+
       if (responseCode < 200 || responseCode >= 300) {
         let errorInfo;
         try {
@@ -493,18 +436,21 @@ class Chatbot {
         } catch (e) {
           errorInfo = { message: responseText };
         }
-        
-        throw new Error('API エラー (HTTP ' + responseCode + '): ' + 
-                       (errorInfo.message || errorInfo.error || responseText));
+
+        throw new Error(
+          "API エラー (HTTP " +
+            responseCode +
+            "): " +
+            (errorInfo.message || errorInfo.error || responseText)
+        );
       }
-      
+
       return JSON.parse(responseText);
-      
     } catch (error) {
-      if (error.message.indexOf('API エラー') === 0) {
+      if (error.message.indexOf("API エラー") === 0) {
         throw error;
       }
-      throw new Error('リクエスト実行エラー: ' + error.message);
+      throw new Error("リクエスト実行エラー: " + error.message);
     }
   }
 }
