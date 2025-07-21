@@ -22,7 +22,10 @@ class Chatbot {
    * @param {string} options.conversation_id - 会話ID (続きの会話の場合)
    * @param {Array} options.files - ファイルリスト
    * @param {boolean} options.auto_generate_name - タイトル自動生成 (デフォルト: true)
-   * @returns {Object} チャットボットからの応答
+   * @param {Function} options.onChunk - ストリーミング時のチャンクごとのコールバック関数
+   * @param {Function} options.onComplete - ストリーミング完了時のコールバック関数
+   * @param {Function} options.onError - エラー発生時のコールバック関数
+   * @returns {Object} チャットボットからの応答 (blocking) または処理状況 (streaming)
    */
   sendMessage(query, user, options) {
     if (!query || !user) {
@@ -47,6 +50,12 @@ class Chatbot {
       payload.files = options.files;
     }
     
+    // ストリーミングモードの場合
+    if (payload.response_mode === 'streaming') {
+      return this._sendStreamingMessage(payload, options);
+    }
+    
+    // ブロッキングモードの場合
     return this._makeRequest('/chat-messages', 'POST', payload);
   }
 
@@ -304,6 +313,149 @@ class Chatbot {
     const payload = { user: user };
     
     return this._makeRequest('/chat-messages/' + taskId + '/stop', 'POST', payload);
+  }
+
+  /**
+   * ストリーミングメッセージを送信する (内部メソッド)
+   * @private
+   * @param {Object} payload - リクエストボディ
+   * @param {Object} options - オプション (コールバック関数含む)
+   * @returns {Object} ストリーミング処理の状況
+   */
+  _sendStreamingMessage(payload, options) {
+    const url = this.baseUrl + '/chat-messages';
+    
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + this.apiKey,
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload)
+    };
+    
+    try {
+      const response = UrlFetchApp.fetch(url, requestOptions);
+      const responseCode = response.getResponseCode();
+      
+      if (responseCode !== 200) {
+        const errorText = response.getContentText();
+        let errorInfo;
+        try {
+          errorInfo = JSON.parse(errorText);
+        } catch (e) {
+          errorInfo = { message: errorText };
+        }
+        
+        const error = new Error('API エラー (HTTP ' + responseCode + '): ' + 
+                               (errorInfo.message || errorInfo.error || errorText));
+        
+        if (options.onError) {
+          options.onError(error);
+        } else {
+          throw error;
+        }
+        return { success: false, error: error.message };
+      }
+      
+      // ストリーミングレスポンスを処理
+      const responseText = response.getContentText();
+      return this._parseStreamingResponse(responseText, options);
+      
+    } catch (error) {
+      if (options.onError) {
+        options.onError(error);
+      } else {
+        throw new Error('ストリーミングリクエストエラー: ' + error.message);
+      }
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * ストリーミングレスポンスを解析する (内部メソッド)
+   * @private
+   * @param {string} responseText - SSE形式のレスポンステキスト
+   * @param {Object} options - コールバック関数
+   * @returns {Object} 解析結果
+   */
+  _parseStreamingResponse(responseText, options) {
+    const events = [];
+    let completeAnswer = '';
+    let conversationId = null;
+    let messageId = null;
+    
+    try {
+      // SSE形式のデータを行ごとに分割
+      const lines = responseText.split('\n');
+      let currentEvent = {};
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        if (line === '') {
+          // 空行はイベントの区切り
+          if (currentEvent.data) {
+            try {
+              const eventData = JSON.parse(currentEvent.data);
+              events.push(eventData);
+              
+              // 各イベントタイプに応じた処理
+              if (eventData.event === 'message') {
+                completeAnswer = eventData.answer || '';
+                conversationId = eventData.conversation_id;
+                messageId = eventData.message_id;
+              } else if (eventData.event === 'message_replace') {
+                completeAnswer = eventData.answer || '';
+              } else if (eventData.event === 'message_end') {
+                conversationId = eventData.conversation_id;
+                messageId = eventData.message_id;
+              }
+              
+              // onChunkコールバックを呼び出し
+              if (options.onChunk) {
+                options.onChunk(eventData);
+              }
+              
+            } catch (parseError) {
+              console.warn('SSEイベントの解析エラー:', parseError.message);
+            }
+          }
+          currentEvent = {};
+        } else if (line.startsWith('data: ')) {
+          currentEvent.data = line.substring(6);
+        } else if (line.startsWith('event: ')) {
+          currentEvent.event = line.substring(7);
+        }
+      }
+      
+      // 完了時のコールバック
+      const result = {
+        success: true,
+        answer: completeAnswer,
+        conversation_id: conversationId,
+        message_id: messageId,
+        events: events
+      };
+      
+      if (options.onComplete) {
+        options.onComplete(result);
+      }
+      
+      return result;
+      
+    } catch (error) {
+      const errorResult = {
+        success: false,
+        error: 'ストリーミングレスポンス解析エラー: ' + error.message
+      };
+      
+      if (options.onError) {
+        options.onError(new Error(errorResult.error));
+      }
+      
+      return errorResult;
+    }
   }
 
   /**
