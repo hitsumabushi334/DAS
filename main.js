@@ -8,7 +8,7 @@
  */
 function Chatbot(apiKey, baseUrl) {
   this.apiKey = apiKey;
-  this.baseUrl = baseUrl || "https://api.dify.ai/v1";
+  this.baseUrl = baseUrl || 'https://api.dify.ai/v1';
 }
 
 /**
@@ -23,28 +23,30 @@ function Chatbot(apiKey, baseUrl) {
  * @param {boolean} options.auto_generate_name - タイトル自動生成 (デフォルト: true)
  * @returns {Object} チャットボットからの応答
  */
-Chatbot.prototype.sendMessage = function (query, user, options) {
+Chatbot.prototype.sendMessage = function(query, user, options) {
   if (!query || !user) {
-    throw new Error("query と user は必須パラメータです");
+    throw new Error('query と user は必須パラメータです');
   }
-
+  
+  options = options || {};
+  
   var payload = {
     query: query,
     user: user,
     inputs: options.inputs || {},
-    response_mode: options.response_mode || "blocking",
-    auto_generate_name: options.auto_generate_name !== false,
+    response_mode: options.response_mode || 'blocking',
+    auto_generate_name: options.auto_generate_name !== false
   };
-
+  
   if (options.conversation_id) {
     payload.conversation_id = options.conversation_id;
   }
-
+  
   if (options.files) {
     payload.files = options.files;
   }
-
-  return this._makeRequest("/chat-messages", "POST", payload);
+  
+  return this._makeRequest('/chat-messages', 'POST', payload);
 };
 
 /**
@@ -56,28 +58,28 @@ Chatbot.prototype.sendMessage = function (query, user, options) {
  * @param {string} options.sort_by - ソートフィールド (デフォルト: '-updated_at')
  * @returns {Object} 会話リスト
  */
-Chatbot.prototype.getConversations = function (user, options) {
+Chatbot.prototype.getConversations = function(user, options) {
   if (!user) {
-    throw new Error("user は必須パラメータです");
+    throw new Error('user は必須パラメータです');
   }
-
+  
+  options = options || {};
+  
   var params = {
     user: user,
     limit: options.limit || 20,
-    sort_by: options.sort_by || "-updated_at",
+    sort_by: options.sort_by || '-updated_at'
   };
-
+  
   if (options.last_id) {
     params.last_id = options.last_id;
   }
-
-  var queryString = Object.keys(params)
-    .map(function (key) {
-      return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
-    })
-    .join("&");
-
-  return this._makeRequest("/conversations?" + queryString, "GET");
+  
+  var queryString = Object.keys(params).map(function(key) {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+  }).join('&');
+  
+  return this._makeRequest('/conversations?' + queryString, 'GET');
 };
 
 /**
@@ -89,29 +91,22 @@ Chatbot.prototype.getConversations = function (user, options) {
  * @param {number} options.limit - 返すメッセージ数
  * @returns {Object} 会話履歴メッセージ
  */
-Chatbot.prototype.getConversationMessages = function (
-  conversationId,
-  user,
-  options,
-) {
+Chatbot.prototype.getConversationMessages = function(conversationId, user, options) {
   if (!conversationId || !user) {
-    throw new Error("conversationId と user は必須パラメータです");
+    throw new Error('conversationId と user は必須パラメータです');
   }
-
+  
+  options = options || {};
+  
   var params = { user: user };
   if (options.first_id) params.first_id = options.first_id;
   if (options.limit) params.limit = options.limit;
-
-  var queryString = Object.keys(params)
-    .map(function (key) {
-      return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
-    })
-    .join("&");
-
-  return this._makeRequest(
-    "/conversations/" + conversationId + "/messages?" + queryString,
-    "GET",
-  );
+  
+  var queryString = Object.keys(params).map(function(key) {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+  }).join('&');
+  
+  return this._makeRequest('/conversations/' + conversationId + '/messages?' + queryString, 'GET');
 };
 
 /**
@@ -121,21 +116,17 @@ Chatbot.prototype.getConversationMessages = function (
  * @param {string} user - ユーザー識別子
  * @returns {Object} 更新結果
  */
-Chatbot.prototype.renameConversation = function (conversationId, name, user) {
+Chatbot.prototype.renameConversation = function(conversationId, name, user) {
   if (!conversationId || !name || !user) {
-    throw new Error("conversationId, name, user は必須パラメータです");
+    throw new Error('conversationId, name, user は必須パラメータです');
   }
-
+  
   var payload = {
     name: name,
-    user: user,
+    user: user
   };
-
-  return this._makeRequest(
-    "/conversations/" + conversationId,
-    "PATCH",
-    payload,
-  );
+  
+  return this._makeRequest('/conversations/' + conversationId, 'PATCH', payload);
 };
 
 /**
@@ -144,22 +135,17 @@ Chatbot.prototype.renameConversation = function (conversationId, name, user) {
  * @param {string} user - ユーザー識別者
  * @returns {Object} 削除結果
  */
-Chatbot.prototype.deleteConversation = function (conversationId, user) {
+Chatbot.prototype.deleteConversation = function(conversationId, user) {
   if (!conversationId || !user) {
-    throw new Error("conversationId と user は必須パラメータです");
+    throw new Error('conversationId と user は必須パラメータです');
   }
-
+  
   var params = { user: user };
-  var queryString = Object.keys(params)
-    .map(function (key) {
-      return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
-    })
-    .join("&");
-
-  return this._makeRequest(
-    "/conversations/" + conversationId + "?" + queryString,
-    "DELETE",
-  );
+  var queryString = Object.keys(params).map(function(key) {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+  }).join('&');
+  
+  return this._makeRequest('/conversations/' + conversationId + '?' + queryString, 'DELETE');
 };
 
 /**
@@ -168,33 +154,30 @@ Chatbot.prototype.deleteConversation = function (conversationId, user) {
  * @param {string} user - ユーザー識別子
  * @returns {Object} アップロード結果
  */
-Chatbot.prototype.uploadFile = function (file, user) {
+Chatbot.prototype.uploadFile = function(file, user) {
   if (!file || !user) {
-    throw new Error("file と user は必須パラメータです");
+    throw new Error('file と user は必須パラメータです');
   }
-
+  
   var formData = {
-    file: file,
-    user: user,
+    'file': file,
+    'user': user
   };
-
+  
   var options = {
-    method: "POST",
+    method: 'POST',
     headers: {
-      Authorization: "Bearer " + this.apiKey,
+      'Authorization': 'Bearer ' + this.apiKey
     },
-    payload: formData,
+    payload: formData
   };
-
-  var response = UrlFetchApp.fetch(this.baseUrl + "/files/upload", options);
-
-  if (
-    response.getResponseCode() !== 200 &&
-    response.getResponseCode() !== 201
-  ) {
-    throw new Error("ファイルアップロードエラー: " + response.getContentText());
+  
+  var response = UrlFetchApp.fetch(this.baseUrl + '/files/upload', options);
+  
+  if (response.getResponseCode() !== 200 && response.getResponseCode() !== 201) {
+    throw new Error('ファイルアップロードエラー: ' + response.getContentText());
   }
-
+  
   return JSON.parse(response.getContentText());
 };
 
@@ -205,25 +188,21 @@ Chatbot.prototype.uploadFile = function (file, user) {
  * @param {string} user - ユーザー識別者
  * @returns {Object} フィードバック結果
  */
-Chatbot.prototype.sendFeedback = function (messageId, rating, user) {
+Chatbot.prototype.sendFeedback = function(messageId, rating, user) {
   if (!messageId || !rating || !user) {
-    throw new Error("messageId, rating, user は必須パラメータです");
+    throw new Error('messageId, rating, user は必須パラメータです');
   }
-
-  if (rating !== "like" && rating !== "dislike") {
+  
+  if (rating !== 'like' && rating !== 'dislike') {
     throw new Error('rating は "like" または "dislike" である必要があります');
   }
-
+  
   var payload = {
     rating: rating,
-    user: user,
+    user: user
   };
-
-  return this._makeRequest(
-    "/messages/" + messageId + "/feedbacks",
-    "POST",
-    payload,
-  );
+  
+  return this._makeRequest('/messages/' + messageId + '/feedbacks', 'POST', payload);
 };
 
 /**
@@ -235,46 +214,45 @@ Chatbot.prototype.sendFeedback = function (messageId, rating, user) {
  * @param {boolean} options.streaming - ストリーミング応答 (デフォルト: false)
  * @returns {Blob} 音声ファイル
  */
-Chatbot.prototype.textToAudio = function (user, options) {
+Chatbot.prototype.textToAudio = function(user, options) {
   if (!user) {
-    throw new Error("user は必須パラメータです");
+    throw new Error('user は必須パラメータです');
   }
-
+  
+  options = options || {};
+  
   if (!options.message_id && !options.text) {
-    throw new Error("message_id または text のいずれかが必要です");
+    throw new Error('message_id または text のいずれかが必要です');
   }
-
+  
   var payload = {
     user: user,
-    streaming: options.streaming || false,
+    streaming: options.streaming || false
   };
-
+  
   if (options.message_id) {
     payload.message_id = options.message_id;
   }
-
+  
   if (options.text) {
     payload.text = options.text;
   }
-
+  
   var requestOptions = {
-    method: "POST",
+    method: 'POST',
     headers: {
-      Authorization: "Bearer " + this.apiKey,
-      "Content-Type": "application/json",
+      'Authorization': 'Bearer ' + this.apiKey,
+      'Content-Type': 'application/json'
     },
-    payload: JSON.stringify(payload),
+    payload: JSON.stringify(payload)
   };
-
-  var response = UrlFetchApp.fetch(
-    this.baseUrl + "/text-to-audio",
-    requestOptions,
-  );
-
+  
+  var response = UrlFetchApp.fetch(this.baseUrl + '/text-to-audio', requestOptions);
+  
   if (response.getResponseCode() !== 200) {
-    throw new Error("テキスト音声変換エラー: " + response.getContentText());
+    throw new Error('テキスト音声変換エラー: ' + response.getContentText());
   }
-
+  
   return response.getBlob();
 };
 
@@ -284,30 +262,30 @@ Chatbot.prototype.textToAudio = function (user, options) {
  * @param {string} user - ユーザー識別子
  * @returns {Object} テキスト変換結果
  */
-Chatbot.prototype.audioToText = function (file, user) {
+Chatbot.prototype.audioToText = function(file, user) {
   if (!file || !user) {
-    throw new Error("file と user は必須パラメータです");
+    throw new Error('file と user は必須パラメータです');
   }
-
+  
   var formData = {
-    file: file,
-    user: user,
+    'file': file,
+    'user': user
   };
-
+  
   var options = {
-    method: "POST",
+    method: 'POST',
     headers: {
-      Authorization: "Bearer " + this.apiKey,
+      'Authorization': 'Bearer ' + this.apiKey
     },
-    payload: formData,
+    payload: formData
   };
-
-  var response = UrlFetchApp.fetch(this.baseUrl + "/audio-to-text", options);
-
+  
+  var response = UrlFetchApp.fetch(this.baseUrl + '/audio-to-text', options);
+  
   if (response.getResponseCode() !== 200) {
-    throw new Error("音声テキスト変換エラー: " + response.getContentText());
+    throw new Error('音声テキスト変換エラー: ' + response.getContentText());
   }
-
+  
   return JSON.parse(response.getContentText());
 };
 
@@ -317,18 +295,14 @@ Chatbot.prototype.audioToText = function (file, user) {
  * @param {string} user - ユーザー識別者
  * @returns {Object} 停止結果
  */
-Chatbot.prototype.stopGeneration = function (taskId, user) {
+Chatbot.prototype.stopGeneration = function(taskId, user) {
   if (!taskId || !user) {
-    throw new Error("taskId と user は必須パラメータです");
+    throw new Error('taskId と user は必須パラメータです');
   }
-
+  
   var payload = { user: user };
-
-  return this._makeRequest(
-    "/chat-messages/" + taskId + "/stop",
-    "POST",
-    payload,
-  );
+  
+  return this._makeRequest('/chat-messages/' + taskId + '/stop', 'POST', payload);
 };
 
 /**
@@ -339,26 +313,26 @@ Chatbot.prototype.stopGeneration = function (taskId, user) {
  * @param {Object} payload - リクエストボディ
  * @returns {Object} レスポンス
  */
-Chatbot.prototype._makeRequest = function (endpoint, method, payload) {
+Chatbot.prototype._makeRequest = function(endpoint, method, payload) {
   var url = this.baseUrl + endpoint;
-
+  
   var options = {
     method: method,
     headers: {
-      Authorization: "Bearer " + this.apiKey,
-      "Content-Type": "application/json",
-    },
+      'Authorization': 'Bearer ' + this.apiKey,
+      'Content-Type': 'application/json'
+    }
   };
-
-  if (payload && method !== "GET") {
+  
+  if (payload && method !== 'GET') {
     options.payload = JSON.stringify(payload);
   }
-
+  
   try {
     var response = UrlFetchApp.fetch(url, options);
     var responseCode = response.getResponseCode();
     var responseText = response.getContentText();
-
+    
     if (responseCode < 200 || responseCode >= 300) {
       var errorInfo;
       try {
@@ -366,20 +340,17 @@ Chatbot.prototype._makeRequest = function (endpoint, method, payload) {
       } catch (e) {
         errorInfo = { message: responseText };
       }
-
-      throw new Error(
-        "API エラー (HTTP " +
-          responseCode +
-          "): " +
-          (errorInfo.message || errorInfo.error || responseText),
-      );
+      
+      throw new Error('API エラー (HTTP ' + responseCode + '): ' + 
+                     (errorInfo.message || errorInfo.error || responseText));
     }
-
+    
     return JSON.parse(responseText);
+    
   } catch (error) {
-    if (error.message.indexOf("API エラー") === 0) {
+    if (error.message.indexOf('API エラー') === 0) {
       throw error;
     }
-    throw new Error("リクエスト実行エラー: " + error.message);
+    throw new Error('リクエスト実行エラー: ' + error.message);
   }
 };
