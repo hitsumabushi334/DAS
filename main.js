@@ -4,12 +4,34 @@
  */
 
 /**
+ * HTTP ステータスコード定数
+ */
+const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+/**
  * Chatbotクラス - Difyのチャットボット機能へのアクセス
  */
 class Chatbot {
   constructor(apiKey, baseUrl) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl || "https://api.dify.ai/v1";
+
+    // リクエストキャッシュ (GETリクエスト用)
+    this._cache = {};
+    this._cacheTimeout = 5 * 60 * 1000; // 5分間のキャッシュ
+
+    // レート制限 (1分間に60リクエスト)
+    this._rateLimitRequests = [];
+    this._rateLimitWindow = 60 * 1000; // 1分間
+    this._rateLimitMax = 60; // 最大60リクエスト
   }
 
   /**
@@ -29,7 +51,7 @@ class Chatbot {
    */
   sendMessage(query, user, options) {
     if (!query || !user) {
-      throw new Error("query と user は必須パラメータです");
+      throw new Error(`query と user は必須パラメータです`);
     }
 
     options = options || {};
@@ -82,7 +104,7 @@ class Chatbot {
    */
   getConversations(user, options) {
     if (!user) {
-      throw new Error("user は必須パラメータです");
+      throw new Error(`user は必須パラメータです`);
     }
 
     options = options || {};
@@ -113,7 +135,7 @@ class Chatbot {
    */
   getConversationMessages(conversationId, user, options) {
     if (!conversationId || !user) {
-      throw new Error("conversationId と user は必須パラメータです");
+      throw new Error(`conversationId と user は必須パラメータです`);
     }
 
     options = options || {};
@@ -139,7 +161,7 @@ class Chatbot {
    */
   renameConversation(conversationId, name, user) {
     if (!conversationId || !name || !user) {
-      throw new Error("conversationId, name, user は必須パラメータです");
+      throw new Error(`conversationId, name, user は必須パラメータです`);
     }
 
     const payload = {
@@ -162,7 +184,7 @@ class Chatbot {
    */
   deleteConversation(conversationId, user) {
     if (!conversationId || !user) {
-      throw new Error("conversationId と user は必須パラメータです");
+      throw new Error(`conversationId と user は必須パラメータです`);
     }
 
     const params = { user: user };
@@ -182,7 +204,15 @@ class Chatbot {
    */
   uploadFile(file, user) {
     if (!file || !user) {
-      throw new Error("file と user は必須パラメータです");
+      throw new Error(`file と user は必須パラメータです`);
+    }
+
+    // ファイルサイズ検証 (50MB制限)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.getSize && file.getSize() > MAX_FILE_SIZE) {
+      throw new Error(
+        `ファイルサイズが制限を超えています。最大サイズ: ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+      );
     }
 
     const formData = {
@@ -202,8 +232,8 @@ class Chatbot {
     const response = UrlFetchApp.fetch(this.baseUrl + "/files/upload", options);
 
     if (
-      response.getResponseCode() !== 200 &&
-      response.getResponseCode() !== 201
+      response.getResponseCode() !== HTTP_STATUS.OK &&
+      response.getResponseCode() !== HTTP_STATUS.CREATED
     ) {
       let errorInfo;
       try {
@@ -212,8 +242,7 @@ class Chatbot {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        "ファイルアップロードエラー: " +
-          (errorInfo.message || errorInfo.error || response.getContentText()),
+        `ファイルアップロードエラー: ${errorInfo.message || errorInfo.error || response.getContentText()}`,
       );
     }
 
@@ -229,11 +258,11 @@ class Chatbot {
    */
   sendFeedback(messageId, rating, user) {
     if (!messageId || !rating || !user) {
-      throw new Error("messageId, rating, user は必須パラメータです");
+      throw new Error(`messageId, rating, user は必須パラメータです`);
     }
 
     if (rating !== "like" && rating !== "dislike") {
-      throw new Error('rating は "like" または "dislike" である必要があります');
+      throw new Error(`rating は "like" または "dislike" である必要があります`);
     }
 
     const payload = {
@@ -259,13 +288,13 @@ class Chatbot {
    */
   textToAudio(user, options) {
     if (!user) {
-      throw new Error("user は必須パラメータです");
+      throw new Error(`user は必須パラメータです`);
     }
 
     options = options || {};
 
     if (!options.message_id && !options.text) {
-      throw new Error("message_id または text のいずれかが必要です");
+      throw new Error(`message_id または text のいずれかが必要です`);
     }
 
     const payload = {
@@ -288,6 +317,7 @@ class Chatbot {
         "Content-Type": "application/json",
       },
       payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
     };
 
     const response = UrlFetchApp.fetch(
@@ -295,8 +325,16 @@ class Chatbot {
       requestOptions,
     );
 
-    if (response.getResponseCode() !== 200) {
-      throw new Error("テキスト音声変換エラー: " + response.getContentText());
+    if (response.getResponseCode() !== HTTP_STATUS.OK) {
+      let errorInfo;
+      try {
+        errorInfo = JSON.parse(response.getContentText());
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
+      throw new Error(
+        `テキスト音声変換エラー: ${errorInfo.message || errorInfo.error || response.getContentText()}`,
+      );
     }
 
     return response.getBlob();
@@ -310,7 +348,7 @@ class Chatbot {
    */
   audioToText(file, user) {
     if (!file || !user) {
-      throw new Error("file と user は必須パラメータです");
+      throw new Error(`file と user は必須パラメータです`);
     }
 
     const formData = {
@@ -332,7 +370,7 @@ class Chatbot {
       options,
     );
 
-    if (response.getResponseCode() !== 200) {
+    if (response.getResponseCode() !== HTTP_STATUS.OK) {
       let errorInfo;
       try {
         errorInfo = JSON.parse(response.getContentText());
@@ -340,8 +378,7 @@ class Chatbot {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        "音声テキスト変換エラー: " +
-          (errorInfo.message || errorInfo.error || response.getContentText()),
+        `音声テキスト変換エラー: ${errorInfo.message || errorInfo.error || response.getContentText()}`,
       );
     }
 
@@ -356,7 +393,7 @@ class Chatbot {
    */
   stopGeneration(taskId, user) {
     if (!taskId || !user) {
-      throw new Error("taskId と user は必須パラメータです");
+      throw new Error(`taskId と user は必須パラメータです`);
     }
 
     const payload = { user: user };
@@ -392,7 +429,7 @@ class Chatbot {
   _parseStreamingResponse(response) {
     const responseCode = response.getResponseCode();
 
-    if (responseCode === 200) {
+    if (responseCode === HTTP_STATUS.OK) {
       Logger.log("API call successful");
 
       const content = response.getContentText();
@@ -430,10 +467,7 @@ class Chatbot {
     } else {
       Logger.log("Error message: " + response.getContentText());
       throw new Error(
-        "ストリーミングAPIエラー (HTTP " +
-          responseCode +
-          "): " +
-          response.getContentText(),
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${response.getContentText()}`,
       );
     }
     return { answer: answer };
@@ -449,6 +483,19 @@ class Chatbot {
    */
   _makeRequest(endpoint, method, payload) {
     const url = this.baseUrl + endpoint;
+
+    // GETリクエストの場合、キャッシュをチェック
+    if (method === "GET") {
+      const cacheKey = url;
+      const cached = this._cache[cacheKey];
+
+      if (cached && Date.now() - cached.timestamp < this._cacheTimeout) {
+        return cached.data;
+      }
+    }
+
+    // レート制限チェック
+    this._checkRateLimit();
 
     const options = {
       method: method,
@@ -468,7 +515,7 @@ class Chatbot {
       const responseCode = response.getResponseCode();
       const responseText = response.getContentText();
 
-      if (responseCode < 200 || responseCode >= 300) {
+      if (responseCode < HTTP_STATUS.OK || responseCode >= 300) {
         let errorInfo;
         try {
           errorInfo = JSON.parse(responseText);
@@ -483,16 +530,50 @@ class Chatbot {
           responseText
         ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
         throw new Error(
-          "API エラー (HTTP " + responseCode + "): " + safeErrorMessage,
+          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`,
         );
       }
 
-      return JSON.parse(responseText);
+      const responseData = JSON.parse(responseText);
+
+      // GETリクエストの結果をキャッシュ
+      if (method === "GET") {
+        const cacheKey = url;
+        this._cache[cacheKey] = {
+          data: responseData,
+          timestamp: Date.now(),
+        };
+      }
+
+      return responseData;
     } catch (error) {
       if (error.message.indexOf("API エラー") === 0) {
         throw error;
       }
-      throw new Error("リクエスト実行エラー: " + error.message);
+      throw new Error(`リクエスト実行エラー: ${error.message}`);
     }
+  }
+
+  /**
+   * レート制限をチェックする (内部メソッド)
+   * @private
+   */
+  _checkRateLimit() {
+    const now = Date.now();
+
+    // 古いリクエストを削除
+    this._rateLimitRequests = this._rateLimitRequests.filter(
+      (timestamp) => now - timestamp < this._rateLimitWindow,
+    );
+
+    // リクエスト数が上限に達している場合、エラーを投げる
+    if (this._rateLimitRequests.length >= this._rateLimitMax) {
+      throw new Error(
+        `レート制限に達しました。${this._rateLimitWindow / 1000}秒間に${this._rateLimitMax}リクエストを超えています`,
+      );
+    }
+
+    // 現在のリクエストを記録
+    this._rateLimitRequests.push(now);
   }
 }
