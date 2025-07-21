@@ -1,0 +1,12 @@
+GitHub Actions テスト用ファイル
+
+このファイルはGitHub Actionsの動作確認のために作成されました。
+
+作成日時: 2025-07-21
+作成者: Claude Code
+目的: GitHub Actionsのテスト実行
+
+DAS プロジェクトについて:
+- Google Apps Script (GAS) から Dify API を呼び出すためのライブラリ
+- Chatbot、Chatflow、Workflow、TextGenerator の各機能に対応
+- 統一されたインターフェースでDifyサービスへアクセス可能
