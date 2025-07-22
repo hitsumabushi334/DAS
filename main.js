@@ -157,21 +157,33 @@ class Chatbot {
    * @param {string} conversationId - 会話ID
    * @param {string} name - 新しい会話名
    * @param {string} user - ユーザー識別子
+   * @param {boolean} autoGenerate - 自動生成フラグ（オプション）
    * @returns {Object} 更新結果
    */
-  renameConversation(conversationId, name, user) {
-    if (!conversationId || !name || !user) {
-      throw new Error(`conversationId, name, user は必須パラメータです`);
+  renameConversation(conversationId, name, user, autoGenerate) {
+    if (!conversationId || !user) {
+      throw new Error(`conversationId と user は必須パラメータです`);
+    }
+
+    if (!name && !autoGenerate) {
+      throw new Error(`name または autoGenerate のいずれかが必要です`);
     }
 
     const payload = {
-      name: name,
       user: user,
     };
 
+    if (name) {
+      payload.name = name;
+    }
+
+    if (autoGenerate) {
+      payload.auto_generate = autoGenerate;
+    }
+
     return this._makeRequest(
-      "/conversations/" + conversationId,
-      "PATCH",
+      "/conversations/" + conversationId + "/name",
+      "POST",
       payload,
     );
   }
@@ -406,6 +418,107 @@ class Chatbot {
   }
 
   /**
+   * WebApp設定を取得する
+   * @returns {Object} WebApp UI設定情報
+   */
+  getAppSite() {
+    return this._makeRequest("/site", "GET");
+  }
+
+  /**
+   * アプリケーションのパラメータ情報を取得する
+   * @returns {Object} 機能・入力パラメータ情報
+   */
+  getAppParameters() {
+    return this._makeRequest("/parameters", "GET");
+  }
+
+  /**
+   * アプリケーションのメタ情報を取得する
+   * @returns {Object} ツールアイコンメタ情報
+   */
+  getAppMeta() {
+    return this._makeRequest("/meta", "GET");
+  }
+
+  /**
+   * アプリケーションの基本情報を取得する
+   * @returns {Object} アプリケーション基本情報
+   */
+  getAppInfo() {
+    return this._makeRequest("/info", "GET");
+  }
+
+  /**
+   * メッセージの推奨質問を取得する
+   * @param {string} messageId - メッセージID
+   * @param {string} user - ユーザー識別子
+   * @returns {Object} 推奨質問リスト
+   */
+  getSuggestedQuestions(messageId, user) {
+    if (!messageId || !user) {
+      throw new Error(`messageId と user は必須パラメータです`);
+    }
+
+    const params = { user: user };
+    const queryString = this._buildQueryString(params);
+
+    return this._makeRequest(
+      "/messages/" + messageId + "/suggested?" + queryString,
+      "GET"
+    );
+  }
+
+  /**
+   * アプリのフィードバック情報を取得する
+   * @param {Object} options - オプションパラメータ
+   * @param {number} options.page - ページ番号
+   * @param {number} options.limit - 取得件数制限
+   * @returns {Object} フィードバック情報リスト
+   */
+  getAppFeedbacks(options) {
+    options = options || {};
+
+    const params = {};
+    if (options.page) params.page = options.page;
+    if (options.limit) params.limit = options.limit;
+
+    const queryString = Object.keys(params).length > 0 ? "?" + this._buildQueryString(params) : "";
+
+    return this._makeRequest("/app/feedbacks" + queryString, "GET");
+  }
+
+  /**
+   * 会話変数を取得する
+   * @param {string} conversationId - 会話ID
+   * @param {string} user - ユーザー識別子
+   * @param {Object} options - オプションパラメータ
+   * @param {string} options.last_id - 現在のページの最後の記録ID
+   * @param {number} options.limit - 返す記録数
+   * @param {string} options.variable_name - 変数名フィルタ
+   * @returns {Object} 会話変数データ
+   */
+  getConversationVariables(conversationId, user, options) {
+    if (!conversationId || !user) {
+      throw new Error(`conversationId と user は必須パラメータです`);
+    }
+
+    options = options || {};
+
+    const params = { user: user };
+    if (options.last_id) params.last_id = options.last_id;
+    if (options.limit) params.limit = options.limit;
+    if (options.variable_name) params.variable_name = options.variable_name;
+
+    const queryString = this._buildQueryString(params);
+
+    return this._makeRequest(
+      "/conversations/" + conversationId + "/variables?" + queryString,
+      "GET"
+    );
+  }
+
+  /**
    * クエリ文字列を生成する (内部メソッド)
    * @private
    * @param {Object} params - パラメータオブジェクト
@@ -423,18 +536,20 @@ class Chatbot {
   /**
    * ストリーミングレスポンスを解析する (内部メソッド)
    * @private
-   * @param {object} responseText - SSE形式のレスポンステキスト
+   * @param {object} response - SSE形式のレスポンス
    * @returns {Object} 解析結果
    */
   _parseStreamingResponse(response) {
     const responseCode = response.getResponseCode();
 
     if (responseCode === HTTP_STATUS.OK) {
-      Logger.log("API call successful");
+      Logger.log("Chatbot streaming API call successful");
 
       const content = response.getContentText();
       const chunks = content.split("\n\n");
       let answer = "";
+      let conversationId = null;
+      let messageId = null;
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i].trim();
@@ -442,35 +557,64 @@ class Chatbot {
           try {
             const json = JSON.parse(chunk.substring(6));
             switch (json.event) {
-              case "workflow_started":
-                Logger.log("workflow_started");
-                break;
-              case "workflow_finished":
-                Logger.log("workflow_finished");
-                break;
-              case "node_finished":
-                Logger.log("node_finished");
-                if (json.data.title == "終了") {
-                  answer = json.data.outputs.text;
+              case "message":
+                Logger.log("message event received");
+                if (json.answer) {
+                  answer += json.answer;
+                }
+                if (json.conversation_id) {
+                  conversationId = json.conversation_id;
+                }
+                if (json.id) {
+                  messageId = json.id;
                 }
                 break;
+              case "message_end":
+                Logger.log("message_end event received");
+                if (json.metadata) {
+                  Logger.log("Usage metadata: " + JSON.stringify(json.metadata));
+                }
+                break;
+              case "message_file":
+                Logger.log("message_file event received");
+                break;
+              case "error":
+                Logger.log("Error event: " + JSON.stringify(json));
+                throw new Error(`ストリーミングエラー: ${json.message || json.code}`);
+              case "ping":
+                Logger.log("ping event received");
+                break;
               default:
-                Logger.log(
-                  "Event: " + json.event + ", title: " + json.data.title,
-                );
+                Logger.log("Unknown event: " + json.event);
+                break;
             }
           } catch (e) {
+            if (chunk.substring(6).trim() === "[DONE]") {
+              Logger.log("Streaming completed");
+              break;
+            }
             Logger.log("Error parsing JSON: " + e.toString());
           }
         }
       }
+      
+      return {
+        answer: answer,
+        conversation_id: conversationId,
+        message_id: messageId
+      };
     } else {
       Logger.log("Error message: " + response.getContentText());
+      let errorInfo;
+      try {
+        errorInfo = JSON.parse(response.getContentText());
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
       throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${response.getContentText()}`,
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || response.getContentText()}`,
       );
     }
-    return { answer: answer };
   }
 
   /**
