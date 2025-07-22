@@ -609,9 +609,13 @@ function testRealApiErrorHandling() {
       "invalid-conversation-id",
       REAL_API_TEST_CONFIG.TEST_USER,
     );
+    realApiTestFramework.assertTrue(false, "無効な会話IDでエラーが発生すべき");
   } catch (error) {
+    realApiTestFramework.assertTrue(
+      error.message.length > 0,
+      "エラーメッセージが存在すること"
+    );
     Logger.log(`無効な会話IDでのエラー: ${error.message}`);
-    // このエラーはAPI側で判定されるため、必ずしもエラーになるとは限らない
   }
 }
 
