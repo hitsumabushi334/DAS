@@ -113,24 +113,75 @@
 
 ## 使用例
 
+### ブロッキングモード
 ```javascript
 // インスタンス作成
-var chatbot = new Chatbot('your-api-key', 'https://api.dify.ai/v1');
+const chatbot = new Chatbot('your-api-key', 'https://api.dify.ai/v1');
 
-// メッセージ送信
-var response = chatbot.sendMessage('こんにちは', 'user123', {
+// ブロッキングモードでメッセージ送信
+const response = chatbot.sendMessage('こんにちは', 'user123', {
   response_mode: 'blocking',
   conversation_id: 'optional-conversation-id'
 });
+console.log(response.answer);
+```
 
+### ストリーミングモード
+```javascript
+// ストリーミングモードでメッセージ送信
+const result = chatbot.sendMessage('長い質問をしてください', 'user123', {
+  response_mode: 'streaming',
+  onChunk: function(chunk) {
+    // リアルタイムでチャンクを受信
+    console.log('チャンク受信:', chunk);
+    if (chunk.event === 'message') {
+      console.log('回答の一部:', chunk.answer);
+    }
+  },
+  onComplete: function(result) {
+    // ストリーミング完了時
+    console.log('最終回答:', result.answer);
+    console.log('会話ID:', result.conversation_id);
+  },
+  onError: function(error) {
+    // エラー処理
+    console.error('エラー発生:', error.message);
+  }
+});
+```
+
+### その他の機能
+```javascript
 // 会話リスト取得
-var conversations = chatbot.getConversations('user123', { limit: 10 });
+const conversations = chatbot.getConversations('user123', { limit: 10 });
 
 // ファイルアップロード
-var file = DriveApp.getFileById('file-id').getBlob();
-var uploadResult = chatbot.uploadFile(file, 'user123');
+const file = DriveApp.getFileById('file-id').getBlob();
+const uploadResult = chatbot.uploadFile(file, 'user123');
 ```
+
+## ストリーミングモード機能追加
+
+### 新機能の概要
+- **Server-Sent Events (SSE) 対応**: Dify APIのストリーミングレスポンスを処理
+- **リアルタイムコールバック**: `onChunk`, `onComplete`, `onError` コールバック関数
+- **イベント解析**: SSE形式のデータを適切に解析し、各イベントタイプに対応
+
+### 実装詳細
+1. **`_sendStreamingMessage`メソッド**: ストリーミング専用のHTTPリクエスト処理
+2. **`_parseStreamingResponse`メソッド**: SSE形式レスポンスの解析処理
+3. **イベントハンドリング**: `message`, `message_replace`, `message_end` イベントの処理
+
+### SSEイベントタイプ
+- **message**: 通常のメッセージイベント（完全な回答）
+- **message_replace**: メッセージ置き換えイベント（回答の更新）
+- **message_end**: メッセージ終了イベント（ストリーミング完了）
 
 ## まとめ
 
-Chatbotクラスは作業計画書と要件定義書の全要件を満たし、Dify APIの全主要機能への統一されたアクセスを提供します。Google Apps Script環境での動作を前提とし、適切なエラーハンドリングとセキュリティ対策が実装されています。
+Chatbotクラスは作業計画書と要件定義書の全要件を満たし、さらにストリーミングモード対応により、Dify APIの全機能への統一されたアクセスを提供します。Google Apps Script環境での動作を前提とし、適切なエラーハンドリング、セキュリティ対策、そしてリアルタイム処理が実装されています。
+
+### 追加機能
+- **ストリーミング対応**: リアルタイムレスポンス処理
+- **ES6 Class記法**: 現代的なJavaScript構文
+- **包括的コールバック**: エラー処理とイベント処理の完全対応

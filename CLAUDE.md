@@ -1,6 +1,7 @@
 # DAS プロジェクト - Claude Code 設定
 
 ## 目次
+
 - [プロジェクト概要](#プロジェクト概要)
 - [基本ルール](#基本ルール)
 - [実装作業フロー](#実装作業フロー)
@@ -11,14 +12,16 @@
 
 **DAS (Dify Application Script)**
 
-Google Apps Script（GAS）からDify APIを簡単に呼び出すためのライブラリプロジェクト
+Google Apps Script（GAS）から Dify API を簡単に呼び出すためのライブラリプロジェクト
 
 ### 主な機能
-1. Chatbot、Chatflow、Workflow、TextGeneratorの各機能に対応
-2. 統一されたインターフェースでDifyサービスへアクセス可能
-3. GAS環境での簡単な実装と呼び出し
 
-### 対象API・エンドポイント
+1. Chatbot、Chatflow、Workflow、TextGenerator の各機能に対応
+2. 統一されたインターフェースで Dify サービスへアクセス可能
+3. GAS 環境での簡単な実装と呼び出し
+
+### 対象 API・エンドポイント
+
 - **Chatbot**: `/chat-messages` - 会話管理、ファイル操作
 - **Chatflow**: `/chat-messages` - フロー実行、パラメータ管理
 - **Workflow**: `/workflows/run` - 実行管理、ログ取得
@@ -27,18 +30,21 @@ Google Apps Script（GAS）からDify APIを簡単に呼び出すためのライ
 ## 基本ルール
 
 ### 対話ルール
+
 - 常に日本語で応答する
 - 不明な点があれば人間に確認する（human-in-the-loop ツール使用）
 - 必要に応じて Web 検索を活用する
 - @要件定義書.md 及び@作業計画書.md に従って実装すること
-- apiリファレンスとして@dify-api を参照すること
+- api リファレンスとして@dify-api を参照すること
 
 ### 開発原則
+
 1. **YAGNI**: 必要最小限の実装
-2. **DRY**: 重複コードの排除  
+2. **DRY**: 重複コードの排除
 3. **KISS**: シンプルな解決策を優先
 
 ### 作業報告規則
+
 作業完了時は、以下の形式で作業内容の要約を必ずユーザーに報告してください：
 
 ```
@@ -55,10 +61,12 @@ Google Apps Script（GAS）からDify APIを簡単に呼び出すためのライ
 ## 実装作業フロー
 
 ### 作業前の必須ステップ
+
 1. 要件定義（目的・機能・制約を明確化）
 2. 作業計画（手順・ファイル・テスト方法）
 
 ### 要件定義テンプレート
+
 ```
 ## 概要
 - 目的：[解決する課題]
@@ -78,6 +86,7 @@ Google Apps Script（GAS）からDify APIを簡単に呼び出すためのライ
 ```
 
 ### 作業計画テンプレート
+
 ```
 ## タスク1: [機能概要]
 1. [具体的作業内容]
@@ -95,18 +104,18 @@ Google Apps Script（GAS）からDify APIを簡単に呼び出すためのライ
 - Google Apps Script ライブラリプロジェクト
 - 作業ディレクトリ: `/workspace`
 - プロジェクト概要：
-  1. Google Apps Script（GAS）からDify APIを簡単に呼び出すためのライブラリ
-  2. Chatbot、Chatflow、Workflow、TextGeneratorの各機能に対応
-  3. 統一されたインターフェースでDifyサービスへアクセス可能
+  1. Google Apps Script（GAS）から Dify API を簡単に呼び出すためのライブラリ
+  2. Chatbot、Chatflow、Workflow、TextGenerator の各機能に対応
+  3. 統一されたインターフェースで Dify サービスへアクセス可能
 
 ### 技術スタック
 
-- **実行環境**: Google Apps Script（V8ランタイム）
-- **言語**: JavaScript（ES5互換）
-- **HTTP通信**: UrlFetchApp（GAS標準ライブラリ）
+- **実行環境**: Google Apps Script（V8 ランタイム）
+- **言語**: JavaScript（ES6 互換）
+- **HTTP 通信**: UrlFetchApp（GAS 標準ライブラリ）
 - **認証**: Bearer Token（Dify API Key）
 - **開発ツール**: clasp（Google Apps Script CLI）
-- **対象API**: Dify API v1
+- **対象 API**: Dify API v1
 
 ### 開発コマンド
 
@@ -136,7 +145,7 @@ clasp create [scriptTitle] # 新しい Apps Script プロジェクトを作成�
 └── examples/            # 使用例（予定）
 ```
 
-### APIエンドポイント対応
+### API エンドポイント対応
 
 - **Chatbot**: `/chat-messages`、会話管理、ファイル操作
 - **Chatflow**: `/chat-messages`、フロー実行、パラメータ管理
