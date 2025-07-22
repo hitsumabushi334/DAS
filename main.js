@@ -546,17 +546,39 @@ class Chatbot {
       Logger.log("Chatbot streaming API call successful");
 
       const content = response.getContentText();
-      const chunks = content.split("\n\n");
+      const lines = content.split("\n");
       let answer = "";
       let conversationId = null;
       let messageId = null;
+      let metadata = null;
 
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i].trim();
-        if (chunk.startsWith("data: ")) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith("data: ")) {
           try {
-            const json = JSON.parse(chunk.substring(6));
+            const dataStr = line.substring(6);
+            
+            // [DONE]チェック
+            if (dataStr.trim() === "[DONE]") {
+              Logger.log("Streaming completed with [DONE] signal");
+              break;
+            }
+
+            const json = JSON.parse(dataStr);
+            
             switch (json.event) {
+              case "agent_message":
+                Logger.log("agent_message event received");
+                if (json.answer) {
+                  answer += json.answer;
+                }
+                if (json.conversation_id) {
+                  conversationId = json.conversation_id;
+                }
+                if (json.id) {
+                  messageId = json.id;
+                }
+                break;
               case "message":
                 Logger.log("message event received");
                 if (json.answer) {
@@ -572,39 +594,47 @@ class Chatbot {
               case "message_end":
                 Logger.log("message_end event received");
                 if (json.metadata) {
+                  metadata = json.metadata;
                   Logger.log("Usage metadata: " + JSON.stringify(json.metadata));
                 }
-                break;
+                // message_endでストリーミング終了
+                return {
+                  answer: answer,
+                  conversation_id: conversationId,
+                  message_id: messageId,
+                  metadata: metadata
+                };
               case "message_file":
                 Logger.log("message_file event received");
+                // ファイル情報があれば処理（将来対応）
                 break;
               case "error":
                 Logger.log("Error event: " + JSON.stringify(json));
                 throw new Error(`ストリーミングエラー: ${json.message || json.code}`);
               case "ping":
-                Logger.log("ping event received");
+                Logger.log("ping event received - keep alive");
                 break;
               default:
-                Logger.log("Unknown event: " + json.event);
+                Logger.log("Unknown event: " + json.event + " - " + JSON.stringify(json));
                 break;
             }
           } catch (e) {
-            if (chunk.substring(6).trim() === "[DONE]") {
-              Logger.log("Streaming completed");
-              break;
-            }
-            Logger.log("Error parsing JSON: " + e.toString());
+            Logger.log("Error parsing JSON line: " + line + " - " + e.toString());
+            // JSONパースエラーは継続処理（部分データの可能性）
+            continue;
           }
         }
       }
       
+      // message_endイベントが来なかった場合の戻り値
       return {
         answer: answer,
         conversation_id: conversationId,
-        message_id: messageId
+        message_id: messageId,
+        metadata: metadata
       };
     } else {
-      Logger.log("Error message: " + response.getContentText());
+      Logger.log("Streaming API error - HTTP " + responseCode + ": " + response.getContentText());
       let errorInfo;
       try {
         errorInfo = JSON.parse(response.getContentText());
