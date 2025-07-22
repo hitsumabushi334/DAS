@@ -148,7 +148,7 @@ class Chatbot {
 
     return this._makeRequest(
       "/conversations/" + conversationId + "/messages?" + queryString,
-      "GET",
+      "GET"
     );
   }
 
@@ -184,7 +184,7 @@ class Chatbot {
     return this._makeRequest(
       "/conversations/" + conversationId + "/name",
       "POST",
-      payload,
+      payload
     );
   }
 
@@ -204,7 +204,7 @@ class Chatbot {
 
     return this._makeRequest(
       "/conversations/" + conversationId + "?" + queryString,
-      "DELETE",
+      "DELETE"
     );
   }
 
@@ -223,7 +223,9 @@ class Chatbot {
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
     if (file.getSize && file.getSize() > MAX_FILE_SIZE) {
       throw new Error(
-        `ファイルサイズが制限を超えています。最大サイズ: ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+        `ファイルサイズが制限を超えています。最大サイズ: ${
+          MAX_FILE_SIZE / (1024 * 1024)
+        }MB`
       );
     }
 
@@ -254,7 +256,9 @@ class Chatbot {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `ファイルアップロードエラー: ${errorInfo.message || errorInfo.error || response.getContentText()}`,
+        `ファイルアップロードエラー: ${
+          errorInfo.message || errorInfo.error || response.getContentText()
+        }`
       );
     }
 
@@ -285,7 +289,7 @@ class Chatbot {
     return this._makeRequest(
       "/messages/" + messageId + "/feedbacks",
       "POST",
-      payload,
+      payload
     );
   }
 
@@ -334,7 +338,7 @@ class Chatbot {
 
     const response = UrlFetchApp.fetch(
       this.baseUrl + "/text-to-audio",
-      requestOptions,
+      requestOptions
     );
 
     if (response.getResponseCode() !== HTTP_STATUS.OK) {
@@ -345,7 +349,9 @@ class Chatbot {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `テキスト音声変換エラー: ${errorInfo.message || errorInfo.error || response.getContentText()}`,
+        `テキスト音声変換エラー: ${
+          errorInfo.message || errorInfo.error || response.getContentText()
+        }`
       );
     }
 
@@ -379,7 +385,7 @@ class Chatbot {
 
     const response = UrlFetchApp.fetch(
       this.baseUrl + "/audio-to-text",
-      options,
+      options
     );
 
     if (response.getResponseCode() !== HTTP_STATUS.OK) {
@@ -390,7 +396,9 @@ class Chatbot {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `音声テキスト変換エラー: ${errorInfo.message || errorInfo.error || response.getContentText()}`,
+        `音声テキスト変換エラー: ${
+          errorInfo.message || errorInfo.error || response.getContentText()
+        }`
       );
     }
 
@@ -413,7 +421,7 @@ class Chatbot {
     return this._makeRequest(
       "/chat-messages/" + taskId + "/stop",
       "POST",
-      payload,
+      payload
     );
   }
 
@@ -483,7 +491,10 @@ class Chatbot {
     if (options.page) params.page = options.page;
     if (options.limit) params.limit = options.limit;
 
-    const queryString = Object.keys(params).length > 0 ? "?" + this._buildQueryString(params) : "";
+    const queryString =
+      Object.keys(params).length > 0
+        ? "?" + this._buildQueryString(params)
+        : "";
 
     return this._makeRequest("/app/feedbacks" + queryString, "GET");
   }
@@ -527,8 +538,7 @@ class Chatbot {
   _buildQueryString(params) {
     return Object.keys(params)
       .map(
-        (key) =>
-          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
+        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
       )
       .join("&");
   }
@@ -557,7 +567,7 @@ class Chatbot {
         if (line.startsWith("data: ")) {
           try {
             const dataStr = line.substring(6);
-            
+
             // [DONE]チェック
             if (dataStr.trim() === "[DONE]") {
               Logger.log("Streaming completed with [DONE] signal");
@@ -565,7 +575,7 @@ class Chatbot {
             }
 
             const json = JSON.parse(dataStr);
-            
+
             switch (json.event) {
               case "agent_message":
                 Logger.log("agent_message event received");
@@ -595,46 +605,53 @@ class Chatbot {
                 Logger.log("message_end event received");
                 if (json.metadata) {
                   metadata = json.metadata;
-                  Logger.log("Usage metadata: " + JSON.stringify(json.metadata));
+                  Logger.log(
+                    "Usage metadata: " + JSON.stringify(json.metadata)
+                  );
                 }
                 // message_endでストリーミング終了
                 return {
                   answer: answer,
                   conversation_id: conversationId,
                   message_id: messageId,
-                  metadata: metadata
+                  metadata: metadata,
                 };
-              case "message_file":
-                Logger.log("message_file event received");
-                // ファイル情報があれば処理（将来対応）
-                break;
               case "error":
                 Logger.log("Error event: " + JSON.stringify(json));
-                throw new Error(`ストリーミングエラー: ${json.message || json.code}`);
-              case "ping":
-                Logger.log("ping event received - keep alive");
+                throw new Error(
+                  `ストリーミングエラー: ${json.message || json.code}`
+                );
                 break;
               default:
-                Logger.log("Unknown event: " + json.event + " - " + JSON.stringify(json));
+                Logger.log(
+                  "Unknown event: " + json.event + " - " + JSON.stringify(json)
+                );
                 break;
             }
           } catch (e) {
-            Logger.log("Error parsing JSON line: " + line + " - " + e.toString());
+            Logger.log(
+              "Error parsing JSON line: " + line + " - " + e.toString()
+            );
             // JSONパースエラーは継続処理（部分データの可能性）
             continue;
           }
         }
       }
-      
+
       // message_endイベントが来なかった場合の戻り値
       return {
         answer: answer,
         conversation_id: conversationId,
         message_id: messageId,
-        metadata: metadata
+        metadata: metadata,
       };
     } else {
-      Logger.log("Streaming API error - HTTP " + responseCode + ": " + response.getContentText());
+      Logger.log(
+        "Streaming API error - HTTP " +
+          responseCode +
+          ": " +
+          response.getContentText()
+      );
       let errorInfo;
       try {
         errorInfo = JSON.parse(response.getContentText());
@@ -642,7 +659,9 @@ class Chatbot {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || response.getContentText()}`,
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || response.getContentText()
+        }`
       );
     }
   }
@@ -704,7 +723,7 @@ class Chatbot {
           responseText
         ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
         throw new Error(
-          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`,
+          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`
         );
       }
 
@@ -737,13 +756,15 @@ class Chatbot {
 
     // 古いリクエストを削除
     this._rateLimitRequests = this._rateLimitRequests.filter(
-      (timestamp) => now - timestamp < this._rateLimitWindow,
+      (timestamp) => now - timestamp < this._rateLimitWindow
     );
 
     // リクエスト数が上限に達している場合、エラーを投げる
     if (this._rateLimitRequests.length >= this._rateLimitMax) {
       throw new Error(
-        `レート制限に達しました。${this._rateLimitWindow / 1000}秒間に${this._rateLimitMax}リクエストを超えています`,
+        `レート制限に達しました。${this._rateLimitWindow / 1000}秒間に${
+          this._rateLimitMax
+        }リクエストを超えています`
       );
     }
 
