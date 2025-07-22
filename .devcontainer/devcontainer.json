@@ -13,7 +13,8 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "coderabbit.coderabbit-vscode"
       ],
       "settings": {
         "editor.formatOnSave": true,
