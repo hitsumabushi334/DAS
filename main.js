@@ -560,6 +560,7 @@ class Chatbot {
       let answer = "";
       let conversationId = null;
       let messageId = null;
+      let taskId = null;
       let metadata = null;
 
       for (let i = 0; i < lines.length; i++) {
@@ -588,6 +589,9 @@ class Chatbot {
                 if (json.id) {
                   messageId = json.id;
                 }
+                if (json.task_id) {
+                  taskId = json.task_id;
+                }
                 break;
               case "message":
                 Logger.log("message event received");
@@ -599,6 +603,9 @@ class Chatbot {
                 }
                 if (json.id) {
                   messageId = json.id;
+                }
+                if (json.task_id) {
+                  taskId = json.task_id;
                 }
                 break;
               case "message_end":
@@ -614,6 +621,7 @@ class Chatbot {
                   answer: answer,
                   conversation_id: conversationId,
                   message_id: messageId,
+                  task_id: taskId,
                   metadata: metadata,
                 };
               case "error":
@@ -643,6 +651,7 @@ class Chatbot {
         answer: answer,
         conversation_id: conversationId,
         message_id: messageId,
+        task_id: taskId,
         metadata: metadata,
       };
     } else {
