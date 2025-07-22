@@ -5,7 +5,8 @@
       "mcp__playwright__browser_navigate",
       "WebFetch(domain:zenn.dev)",
       "Bash(ls:*)",
-      "WebFetch(domain:docs.dify.ai)"
+      "WebFetch(domain:docs.dify.ai)",
+      "Bash(git add:*)"
     ]
   },
   "enabledMcpjsonServers": [

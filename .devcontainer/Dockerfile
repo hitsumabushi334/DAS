@@ -76,7 +76,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
   -x
 
 # Install Claude and other npm packages
-RUN npm install -g @anthropic-ai/claude-code @google/clasp prettier
+RUN npm install -g @anthropic-ai/claude-code @google/clasp prettier ccusage@latest
 
 # ---- START: Added for human-in-the-loop ----
 # Install human-in-the-loop MCP server using cargo

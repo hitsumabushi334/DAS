@@ -97,6 +97,10 @@ Google Apps Script（GAS）から Dify API を簡単に呼び出すためのラ�
 ...
 ```
 
+### コードレビュー規則
+
+コードレビューの依頼がされた場合、必ず日本語でレビューすること
+
 ## 開発環境・ツール
 
 **DAS (Dify Application Script)**
