@@ -693,6 +693,25 @@ class Chatbot {
    * @param {number} options.page - ページ番号
    * @param {number} options.limit - 取得件数制限
    * @returns {Object} フィードバック情報リスト
+   * ```json
+   *     {
+    "data": [
+        {
+            "id": "8c0fbed8-e2f9-49ff-9f0e-15a35bdd0e25",
+            "app_id": "f252d396-fe48-450e-94ec-e184218e7346",
+            "conversation_id": "2397604b-9deb-430e-b285-4726e51fd62d",
+            "message_id": "709c0b0f-0a96-4a4e-91a4-ec0889937b11",
+            "rating": "like",
+            "content": "message feedback information-3",
+            "from_source": "user",
+            "from_end_user_id": "74286412-9a1a-42c1-929c-01edb1d381d5",
+            "from_account_id": null,
+            "created_at": "2025-04-24T09:24:38",
+            "updated_at": "2025-04-24T09:24:38"
+        }
+    ]
+    }
+  * ```
    */
   getAppFeedbacks(options) {
     options = options || {};
