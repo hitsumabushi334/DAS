@@ -36,17 +36,14 @@ class Chatbot {
 
   /**
    * メッセージを送信する
-   * @param {string} query - ユーザー入力/質問内容
-   * @param {string} user - ユーザー識別子
-   * @param {Object} options - オプションパラメータ
-   * @param {Object} options.inputs - アプリによって定義された変数値
-   * @param {string} options.response_mode - 応答モード ('streaming' または 'blocking', デフォルト: 'blocking')
-   * @param {string} options.conversation_id - 会話ID (続きの会話の場合)
-   * @param {Array} options.files - ファイルリスト
-   * @param {boolean} options.auto_generate_name - タイトル自動生成 (デフォルト: true)
-   * @param {Function} options.onChunk - ストリーミング時のチャンクごとのコールバック関数
-   * @param {Function} options.onComplete - ストリーミング完了時のコールバック関数
-   * @param {Function} options.onError - エラー発生時のコールバック関数
+   * @param {string} query - ユーザー入力/質問内容 (必須)
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {Object} [options.inputs] - アプリによって定義された変数値 (任意, デフォルト: {})
+   * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'streaming')
+   * @param {string} [options.conversation_id] - 会話ID (任意, UUID形式, 続きの会話の場合に指定)
+   * @param {Array} [options.files] - ファイルリスト (任意)
+   * @param {boolean} [options.auto_generate_name] - タイトル自動生成 (任意, デフォルト: true)
    *
    * @returns {Object} 応答モードによって異なる構造のJSONオブジェクト
    *
@@ -101,7 +98,7 @@ class Chatbot {
       query: query,
       user: user,
       inputs: options.inputs || {},
-      response_mode: options.response_mode || "blocking",
+      response_mode: options.response_mode || "streaming",
       auto_generate_name: options.auto_generate_name !== false,
     };
 
@@ -136,11 +133,11 @@ class Chatbot {
 
   /**
    * 会話リストを取得する
-   * @param {string} user - ユーザー識別子
-   * @param {Object} options - オプションパラメータ
-   * @param {string} options.last_id - 現在のページの最後の記録のID
-   * @param {number} options.limit - 返す記録数 (デフォルト: 20, 最大: 100)
-   * @param {string} options.sort_by - ソートフィールド 利用可能な値：created_at, -created_at, updated_at, -updated_at (デフォルト: '-updated_at')
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.last_id] - 現在のページの最後の記録のID (任意, UUID形式, デフォルト: null)
+   * @param {number} [options.limit] - 返す記録数 (任意, デフォルト: 20, 最小: 1, 最大: 100)
+   * @param {string} [options.sort_by] - ソートフィールド (任意, デフォルト: '-updated_at', 利用可能な値：created_at, -created_at, updated_at, -updated_at)
    *
    * @returns {Object} 会話リスト - 以下の構造のJSONオブジェクト
    * ```json
@@ -185,11 +182,11 @@ class Chatbot {
 
   /**
    * 会話履歴メッセージを取得する
-   * @param {string} conversationId - 会話ID
-   * @param {string} user - ユーザー識別子
-   * @param {Object} options - オプションパラメータ
-   * @param {string} options.first_id - 最初のメッセージID
-   * @param {number} options.limit - 返すメッセージ数
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.first_id] - 現在のページの最初のチャット記録のID (任意, UUID形式, デフォルト: null)
+   * @param {number} [options.limit] - 返すメッセージ数 (任意, デフォルト: 20)
    *
    * @returns {Object} 会話履歴メッセージ - 以下の構造のJSONオブジェクト
    * ```json
@@ -229,24 +226,21 @@ class Chatbot {
 
     options = options || {};
 
-    const params = { user: user };
+    const params = { user: user, conversationId: conversationId };
     if (options.first_id) params.first_id = options.first_id;
     if (options.limit) params.limit = options.limit;
 
     const queryString = this._buildQueryString(params);
 
-    return this._makeRequest(
-      "/conversations/" + conversationId + "/messages?" + queryString,
-      "GET"
-    );
+    return this._makeRequest("/messages?" + queryString, "GET");
   }
 
   /**
    * 会話の名前を変更する
-   * @param {string} conversationId - 会話ID
-   * @param {string} name - 新しい会話名
-   * @param {string} user - ユーザー識別子
-   * @param {boolean} autoGenerate - 自動生成フラグ（オプション）
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} [name] - 新しい会話名 (任意, auto_generateがtrueの場合は省略可)
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {boolean} [autoGenerate] - タイトル自動生成フラグ (任意, デフォルト: false)
    * @returns {Object} 更新結果
    * ```json
    * {
@@ -289,8 +283,8 @@ class Chatbot {
 
   /**
    * 会話を削除する
-   * @param {string} conversationId - 会話ID
-   * @param {string} user - ユーザー識別者
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} user - ユーザー識別子 (必須)
    * @returns {Object} 削除結果
    * ```json
    * {
@@ -302,19 +296,19 @@ class Chatbot {
       throw new Error(`conversationId と user は必須パラメータです`);
     }
 
-    const params = { user: user };
-    const queryString = this._buildQueryString(params);
+    const payload = { user: user };
 
     return this._makeRequest(
-      "/conversations/" + conversationId + "?" + queryString,
-      "DELETE"
+      "/conversations/" + conversationId,
+      "DELETE",
+      payload
     );
   }
 
   /**
    * ファイルをアップロードする
-   * @param {Blob} file - アップロードするファイル
-   * @param {string} user - ユーザー識別子
+   * @param {Blob} file - アップロードするファイル (必須, 最大サイズ: 50MB)
+   * @param {string} user - ユーザー識別子 (必須)
    *
    * @returns {Object} アップロード結果 - 以下の構造のJSONオブジェクト
    * ```json
@@ -382,9 +376,10 @@ class Chatbot {
 
   /**
    * メッセージにフィードバックを送信する
-   * @param {string} messageId - メッセージID
-   * @param {string} rating - 評価 ('like' または 'dislike')
-   * @param {string} user - ユーザー識別者
+   * @param {string} messageId - メッセージID (必須, UUID形式)
+   * @param {string} [rating] - 評価 ( 任意, 高評価：'like'、低評価：'dislike'、取り消し：'null')
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [content] - メッセージフィードバックの具体的な内容。(任意)
    *
    * @returns {Object} フィードバック結果 - 以下の構造のJSONオブジェクト
    * ```json
@@ -393,15 +388,20 @@ class Chatbot {
    * }
    * ```
    */
-  sendFeedback(messageId, rating, user) {
+  sendFeedback(messageId, rating, user, content) {
     if (!messageId || !rating || !user) {
       throw new Error(`messageId, rating, user は必須パラメータです`);
     }
 
-    if (rating !== "like" && rating !== "dislike") {
-      throw new Error(`rating は "like" または "dislike" である必要があります`);
+    if (rating !== "like" && rating !== "dislike" && rating !== "null") {
+      throw new Error(
+        `rating は "like" または "dislike"または "null" である必要があります`
+      );
     }
-
+    if (content && typeof content === "string") {
+      content = content.trim();
+      payload.content = content;
+    }
     const payload = {
       rating: rating,
       user: user,
@@ -416,11 +416,11 @@ class Chatbot {
 
   /**
    * テキストから音声に変換する
-   * @param {string} user - ユーザー識別子
-   * @param {Object} options - オプションパラメータ
-   * @param {string} options.message_id - メッセージID (優先)
-   * @param {string} options.text - 音声生成コンテンツ
-   * @param {boolean} options.streaming - ストリーミング応答 (デフォルト: false)
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.message_id] - メッセージID (任意, UUID形式, 優先的に使用される)
+   * @param {string} [options.text] - 音声生成コンテンツ (任意, message_idが指定されていない場合は必須)
+   * @param {boolean} [options.streaming] - ストリーミング応答 (任意, デフォルト: false)
    * @returns {Blob} 音声ファイル
    * ```json
    * {
@@ -457,9 +457,8 @@ class Chatbot {
       method: "POST",
       headers: {
         Authorization: "Bearer " + this.apiKey,
-        "Content-Type": "application/json",
       },
-      payload: JSON.stringify(payload),
+      payload: payload,
       muteHttpExceptions: true,
     };
 
@@ -487,8 +486,8 @@ class Chatbot {
 
   /**
    * 音声からテキストに変換する
-   * @param {Blob} file - 音声ファイル
-   * @param {string} user - ユーザー識別子
+   * @param {Blob} file - 音声ファイル (必須)
+   * @param {string} user - ユーザー識別子 (必須)
    * @returns {Object} テキスト変換結果
    * ```json
    * {
@@ -538,8 +537,8 @@ class Chatbot {
 
   /**
    * メッセージ生成を停止する
-   * @param {string} taskId - タスクID
-   * @param {string} user - ユーザー識別者
+   * @param {string} taskId - タスクID (必須, UUID形式)
+   * @param {string} user - ユーザー識別子 (必須)
    * @returns {Object} 停止結果
    * ```json
    * {
@@ -658,8 +657,8 @@ class Chatbot {
 
   /**
    * メッセージの推奨質問を取得する
-   * @param {string} messageId - メッセージID
-   * @param {string} user - ユーザー識別子
+   * @param {string} messageId - メッセージID (必須, UUID形式)
+   * @param {string} user - ユーザー識別子 (必須)
    *
    * @returns {Object} 推奨質問リスト - 以下の構造のJSONオブジェクト
    * ```json
@@ -689,9 +688,9 @@ class Chatbot {
 
   /**
    * アプリのフィードバック情報を取得する
-   * @param {Object} options - オプションパラメータ
-   * @param {number} options.page - ページ番号
-   * @param {number} options.limit - 取得件数制限
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {number} [options.page] - ページ番号 (任意, デフォルト: 1)
+   * @param {number} [options.limit] - 1ページあたりの件数 (任意, デフォルト: 20)
    * @returns {Object} フィードバック情報リスト
    * ```json
    *     {
@@ -730,12 +729,12 @@ class Chatbot {
 
   /**
    * 会話変数を取得する
-   * @param {string} conversationId - 会話ID
-   * @param {string} user - ユーザー識別子
-   * @param {Object} options - オプションパラメータ
-   * @param {string} options.last_id - 現在のページの最後の記録ID
-   * @param {number} options.limit - 返す記録数
-   * @param {string} options.variable_name - 変数名フィルタ
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} user - ユーザー識別子 (必須)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.last_id] - 現在のページの最後の記録ID (任意, UUID形式, デフォルト: null)
+   * @param {number} [options.limit] - 返す記録数 (任意, デフォルト: 20, 最小: 1, 最大: 100)
+   * @param {string} [options.variable_name] - 変数名フィルタ (任意)
    * @returns {Object} 会話変数データ
    * ```json
    * {
