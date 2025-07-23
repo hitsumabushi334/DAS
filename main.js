@@ -40,14 +40,55 @@ class Chatbot {
    * @param {string} user - ユーザー識別子
    * @param {Object} options - オプションパラメータ
    * @param {Object} options.inputs - アプリによって定義された変数値
-   * @param {string} options.response_mode - 応答モード ('streaming' または 'blocking')
+   * @param {string} options.response_mode - 応答モード ('streaming' または 'blocking', デフォルト: 'blocking')
    * @param {string} options.conversation_id - 会話ID (続きの会話の場合)
    * @param {Array} options.files - ファイルリスト
    * @param {boolean} options.auto_generate_name - タイトル自動生成 (デフォルト: true)
    * @param {Function} options.onChunk - ストリーミング時のチャンクごとのコールバック関数
    * @param {Function} options.onComplete - ストリーミング完了時のコールバック関数
    * @param {Function} options.onError - エラー発生時のコールバック関数
-   * @returns {Object} チャットボットからの応答 (blocking) または処理状況 (streaming)
+   *
+   * @returns {Object} 応答モードによって異なる構造のJSONオブジェクト
+   *
+   * **blocking モード (デフォルト) の戻り値:**
+   * ```json
+   * {
+   *   "event": "message",
+   *   "task_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "message_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "conversation_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "mode": "chat",
+   *   "answer": "完全な回答テキスト",
+   *   "metadata": {
+   *     "usage": {
+   *       "prompt_tokens": 100,
+   *       "completion_tokens": 50,
+   *       "total_tokens": 150
+   *     },
+   *     "retriever_resources": []
+   *   },
+   *   "created_at": 1705395332
+   * }
+   * ```
+   *
+   * **streaming モードの戻り値:**
+   * ```json
+   * {
+   *   "answer": "結合された完全な回答テキスト",
+   *   "conversation_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "message_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "task_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "metadata": {
+   *     "usage": { "prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150 },
+   *     "retriever_resources": []
+   *   },
+   *   "created_at": "1705395332",
+   *   "audio": null,
+   *   "file_id": "",
+   *   "file_url": ""
+   * }
+   * ```
    */
   sendMessage(query, user, options) {
     if (!query || !user) {
@@ -99,8 +140,26 @@ class Chatbot {
    * @param {Object} options - オプションパラメータ
    * @param {string} options.last_id - 現在のページの最後の記録のID
    * @param {number} options.limit - 返す記録数 (デフォルト: 20, 最大: 100)
-   * @param {string} options.sort_by - ソートフィールド (デフォルト: '-updated_at')
-   * @returns {Object} 会話リスト
+   * @param {string} options.sort_by - ソートフィールド 利用可能な値：created_at, -created_at, updated_at, -updated_at (デフォルト: '-updated_at')
+   *
+   * @returns {Object} 会話リスト - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "limit": 20,
+   *   "has_more": false,
+   *   "data": [
+   *     {
+   *       "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "name": "会話名",
+   *       "inputs": {},
+   *       "status": "normal",
+   *       "introduction": "会話の紹介文",
+   *       "created_at": 1705395332,
+   *       "updated_at": 1705395332
+   *     }
+   *   ]
+   * }
+   * ```
    */
   getConversations(user, options) {
     if (!user) {
@@ -131,7 +190,37 @@ class Chatbot {
    * @param {Object} options - オプションパラメータ
    * @param {string} options.first_id - 最初のメッセージID
    * @param {number} options.limit - 返すメッセージ数
-   * @returns {Object} 会話履歴メッセージ
+   *
+   * @returns {Object} 会話履歴メッセージ - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "limit": 20,
+   *   "has_more": false,
+   *   "data": [
+   *     {
+   *       "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "conversation_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "inputs": {},
+   *       "query": "ユーザーの質問内容",
+   *       "answer": "AIの回答内容",
+   *       "message_files": [
+   *         {
+   *           "id": "file-id",
+   *           "type": "image",
+   *           "url": "https://example.com/file.png",
+   *           "belongs_to": "user"
+   *         }
+   *       ],
+   *       "feedback": {
+   *         "rating": "like"
+   *       },
+   *       "retriever_resources": [],
+   *       "agent_thoughts": [],
+   *       "created_at": 1705395332
+   *     }
+   *   ]
+   * }
+   * ```
    */
   getConversationMessages(conversationId, user, options) {
     if (!conversationId || !user) {
@@ -159,6 +248,16 @@ class Chatbot {
    * @param {string} user - ユーザー識別子
    * @param {boolean} autoGenerate - 自動生成フラグ（オプション）
    * @returns {Object} 更新結果
+   * ```json
+   * {
+    "id": "cd78daf6-f9e4-4463-9ff2-54257230a0ce",
+    "name": "Chat vs AI",
+    "inputs": {},
+    "introduction": "",
+    "created_at": 1705569238,
+    "updated_at": 1705569238
+    }
+   * ```
    */
   renameConversation(conversationId, name, user, autoGenerate) {
     if (!conversationId || !user) {
@@ -193,6 +292,10 @@ class Chatbot {
    * @param {string} conversationId - 会話ID
    * @param {string} user - ユーザー識別者
    * @returns {Object} 削除結果
+   * ```json
+   * {
+   *   "result": "success"
+   * }
    */
   deleteConversation(conversationId, user) {
     if (!conversationId || !user) {
@@ -212,7 +315,19 @@ class Chatbot {
    * ファイルをアップロードする
    * @param {Blob} file - アップロードするファイル
    * @param {string} user - ユーザー識別子
-   * @returns {Object} アップロード結果
+   *
+   * @returns {Object} アップロード結果 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "name": "example.pdf",
+   *   "size": 1048576,
+   *   "extension": "pdf",
+   *   "mime_type": "application/pdf",
+   *   "created_by": "user-id",
+   *   "created_at": 1705395332
+   * }
+   * ```
    */
   uploadFile(file, user) {
     if (!file || !user) {
@@ -270,7 +385,13 @@ class Chatbot {
    * @param {string} messageId - メッセージID
    * @param {string} rating - 評価 ('like' または 'dislike')
    * @param {string} user - ユーザー識別者
-   * @returns {Object} フィードバック結果
+   *
+   * @returns {Object} フィードバック結果 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "result": "success"
+   * }
+   * ```
    */
   sendFeedback(messageId, rating, user) {
     if (!messageId || !rating || !user) {
@@ -301,7 +422,13 @@ class Chatbot {
    * @param {string} options.text - 音声生成コンテンツ
    * @param {boolean} options.streaming - ストリーミング応答 (デフォルト: false)
    * @returns {Blob} 音声ファイル
+   * ```json
+   * {
+  "Content-Type": "audio/wav"
+   * }
+  ```
    */
+
   textToAudio(user, options) {
     if (!user) {
       throw new Error(`user は必須パラメータです`);
@@ -363,6 +490,10 @@ class Chatbot {
    * @param {Blob} file - 音声ファイル
    * @param {string} user - ユーザー識別子
    * @returns {Object} テキスト変換結果
+   * ```json
+   * {
+   *   "text": "変換されたテキスト内容",
+   * }
    */
   audioToText(file, user) {
     if (!file || !user) {
@@ -410,6 +541,11 @@ class Chatbot {
    * @param {string} taskId - タスクID
    * @param {string} user - ユーザー識別者
    * @returns {Object} 停止結果
+   * ```json
+   * {
+   *  "result": "success"
+   *}
+   * ```
    */
   stopGeneration(taskId, user) {
     if (!taskId || !user) {
@@ -427,7 +563,24 @@ class Chatbot {
 
   /**
    * WebApp設定を取得する
-   * @returns {Object} WebApp UI設定情報
+   *
+   * @returns {Object} WebApp UI設定情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "title": "アプリタイトル",
+   *   "chat_color_theme": "#1C64F2",
+   *   "chat_color_theme_inverted": false,
+   *   "icon_type": "emoji",
+   *   "icon": "🤖",
+   *   "description": "アプリの説明",
+   *   "copyright": "Copyright info",
+   *   "privacy_policy": "Privacy policy URL",
+   *   "custom_disclaimer": "Custom disclaimer",
+   *   "default_language": "ja-JP",
+   *   "show_workflow_steps": true,
+   *   "use_icon_as_answer_icon": false
+   * }
+   * ```
    */
   getAppSite() {
     return this._makeRequest("/site", "GET");
@@ -435,7 +588,37 @@ class Chatbot {
 
   /**
    * アプリケーションのパラメータ情報を取得する
-   * @returns {Object} 機能・入力パラメータ情報
+   *
+   * @returns {Object} 機能・入力パラメータ情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "opening_statement": "オープニングメッセージ",
+   *   "suggested_questions": ["推奨質問1", "推奨質問2"],
+   *   "suggested_questions_after_answer": {
+   *     "enabled": true
+   *   },
+   *   "speech_to_text": {
+   *     "enabled": false
+   *   },
+   *   "text_to_speech": {
+   *     "enabled": false,
+   *     "voice": "default",
+   *     "language": "ja-JP",
+   *     "autoPlay": "disabled"
+   *   },
+   *   "file_upload": {
+   *     "image": {
+   *       "enabled": true,
+   *       "number_limits": 3,
+   *       "transfer_methods": ["local_file"]
+   *     }
+   *   },
+   *   "system_parameters": {
+   *     "file_size_limit": 52428800,
+   *     "image_file_size_limit": 10485760
+   *   }
+   * }
+   * ```
    */
   getAppParameters() {
     return this._makeRequest("/parameters", "GET");
@@ -443,7 +626,15 @@ class Chatbot {
 
   /**
    * アプリケーションのメタ情報を取得する
-   * @returns {Object} ツールアイコンメタ情報
+   *
+   * @returns {Object} ツールアイコンメタ情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "tool_icons": {
+   *     "tool_name": "icon_url_or_data"
+   *   }
+   * }
+   * ```
    */
   getAppMeta() {
     return this._makeRequest("/meta", "GET");
@@ -451,7 +642,15 @@ class Chatbot {
 
   /**
    * アプリケーションの基本情報を取得する
-   * @returns {Object} アプリケーション基本情報
+   *
+   * @returns {Object} アプリケーション基本情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "name": "アプリケーション名",
+   *   "description": "アプリケーションの説明",
+   *   "tags": ["タグ1", "タグ2"]
+   * }
+   * ```
    */
   getAppInfo() {
     return this._makeRequest("/info", "GET");
@@ -461,7 +660,18 @@ class Chatbot {
    * メッセージの推奨質問を取得する
    * @param {string} messageId - メッセージID
    * @param {string} user - ユーザー識別子
-   * @returns {Object} 推奨質問リスト
+   *
+   * @returns {Object} 推奨質問リスト - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "result": "success",
+   *   "data": [
+   *     "関連する質問1",
+   *     "関連する質問2",
+   *     "関連する質問3"
+   *   ]
+   * }
+   * ```
    */
   getSuggestedQuestions(messageId, user) {
     if (!messageId || !user) {
@@ -508,6 +718,32 @@ class Chatbot {
    * @param {number} options.limit - 返す記録数
    * @param {string} options.variable_name - 変数名フィルタ
    * @returns {Object} 会話変数データ
+   * ```json
+   * {
+  "limit": 100,
+  "has_more": false,
+  "data": [
+    {
+      "id": "variable-uuid-1",
+      "name": "customer_name",
+      "value_type": "string",
+      "value": "John Doe",
+      "description": "会話から抽出された顧客名",
+      "created_at": 1650000000000,
+      "updated_at": 1650000000000
+    },
+    {
+      "id": "variable-uuid-2",
+      "name": "order_details",
+      "value_type": "json",
+      "value": "{\"product\":\"Widget\",\"quantity\":5,\"price\":19.99}",
+      "description": "顧客の注文詳細",
+      "created_at": 1650000000000,
+      "updated_at": 1650000000000
+    }
+  ]
+}
+   * ```
    */
   getConversationVariables(conversationId, user, options) {
     if (!conversationId || !user) {
@@ -592,6 +828,9 @@ class Chatbot {
                 if (json.task_id) {
                   taskId = json.task_id;
                 }
+                if (json.created_at) {
+                  createdAt = json.created_at;
+                }
                 break;
               case "message":
                 Logger.log("message event received");
@@ -607,6 +846,79 @@ class Chatbot {
                 if (json.task_id) {
                   taskId = json.task_id;
                 }
+                if (json.created_at) {
+                  createdAt = json.created_at;
+                }
+                break;
+              case "tts_message":
+                Logger.log("tts_message event received");
+                if (json.task_id) {
+                  taskId = json.task_id;
+                }
+                if (json.message_id) {
+                  messageId = json.message_id;
+                }
+                if (json.audio) {
+                  Logger.log("Audio data received in tts_message event");
+                  // base64デコードしてBlobに変換
+                  const audioBlob = Utilities.newBlob(
+                    Utilities.base64Decode(json.audio),
+                    "audio/mpeg",
+                    "tts_audio.mp3"
+                  );
+                  json.audio = audioBlob;
+                }
+                if (json.created_at) {
+                  createdAt = json.created_at;
+                }
+                break;
+              case "tts_message_end":
+                Logger.log("tts_message_end event received");
+                if (json.task_id) {
+                  taskId = json.task_id;
+                }
+                if (json.message_id) {
+                  messageId = json.message_id;
+                }
+                break;
+              case "agent_thought":
+                Logger.log("agent_thought event received");
+                if (json.task_id) {
+                  taskId = json.task_id;
+                }
+                if (json.message_id) {
+                  messageId = json.message_id;
+                }
+                break;
+              case "message_file":
+                Logger.log("message_file event received");
+                if (json.conversation_id) {
+                  conversationId = json.conversation_id;
+                }
+                if (json.id) {
+                  fileId = json.id;
+                }
+                if (json.url) {
+                  fileUrl = json.url;
+                }
+                break;
+              case "message_replace":
+                Logger.log("message_replace event received");
+                if (json.answer) {
+                  answer = json.answer;
+                }
+                if (json.conversation_id) {
+                  conversationId = json.conversation_id;
+                }
+                if (json.message_id) {
+                  messageId = json.message_id;
+                }
+                if (json.task_id) {
+                  taskId = json.task_id;
+                }
+                break;
+              case "ping":
+                Logger.log("ping event received - connection keepalive");
                 break;
               case "message_end":
                 Logger.log("message_end event received");
@@ -616,13 +928,16 @@ class Chatbot {
                     "Usage metadata: " + JSON.stringify(json.metadata)
                   );
                 }
-                // message_endでストリーミング終了
                 return {
                   answer: answer,
                   conversation_id: conversationId,
                   message_id: messageId,
                   task_id: taskId,
                   metadata: metadata,
+                  created_at: json.created_at || "",
+                  audio: json.audio || null,
+                  file_id: fileId || "",
+                  file_url: fileUrl || "",
                 };
               case "error":
                 Logger.log("Error event: " + JSON.stringify(json));
