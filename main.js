@@ -18,11 +18,16 @@ const HTTP_STATUS = {
 
 /**
  * Chatbotクラス - Difyのチャットボット機能へのアクセス
+ * @param {string} apiKey - Dify APIキー (必須)
+ * @param {string} user - ユーザー識別子 (必須, 未指定時はクラスのuserプロパティを使用)
+ * @param {string} [baseUrl] - Dify APIのベースURL (任意, デフォルト: "https://api.dify.ai/v1")
+
  */
 class Chatbot {
-  constructor(apiKey, baseUrl) {
+  constructor(apiKey, user, baseUrl) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl || "https://api.dify.ai/v1";
+    this.user = user;
 
     // リクエストキャッシュ (GETリクエスト用)
     this._cache = {};
@@ -40,7 +45,7 @@ class Chatbot {
   /**
    * メッセージを送信する
    * @param {string} query - ユーザー入力/質問内容 (必須)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {Object} [options.inputs] - アプリによって定義された変数値 (任意, デフォルト: {})
    * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'streaming')
@@ -91,8 +96,9 @@ class Chatbot {
    * ```
    */
   sendMessage(query, user, options) {
-    if (!query || !user) {
-      throw new Error(`query と user は必須パラメータです`);
+    user = user || this.user;
+    if (!query) {
+      throw new Error(`queryは必須パラメータです`);
     }
 
     options = options || {};
@@ -136,7 +142,7 @@ class Chatbot {
 
   /**
    * 会話リストを取得する
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {string} [options.last_id] - 現在のページの最後の記録のID (任意, UUID形式, デフォルト: null)
    * @param {number} [options.limit] - 返す記録数 (任意, デフォルト: 20, 最小: 1, 最大: 100)
@@ -162,9 +168,7 @@ class Chatbot {
    * ```
    */
   getConversations(user, options) {
-    if (!user) {
-      throw new Error(`user は必須パラメータです`);
-    }
+    user = user || this.user;
 
     options = options || {};
 
@@ -186,7 +190,7 @@ class Chatbot {
   /**
    * 会話履歴メッセージを取得する
    * @param {string} conversationId - 会話ID (必須, UUID形式)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {string} [options.first_id] - 現在のページの最初のチャット記録のID (任意, UUID形式, デフォルト: null)
    * @param {number} [options.limit] - 返すメッセージ数 (任意, デフォルト: 20)
@@ -223,8 +227,9 @@ class Chatbot {
    * ```
    */
   getConversationMessages(conversationId, user, options) {
-    if (!conversationId || !user) {
-      throw new Error(`conversationId と user は必須パラメータです`);
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
     }
 
     options = options || {};
@@ -242,7 +247,7 @@ class Chatbot {
    * 会話の名前を変更する
    * @param {string} conversationId - 会話ID (必須, UUID形式)
    * @param {string} [name] - 新しい会話名 (任意, auto_generateがtrueの場合は省略可)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @param {boolean} [autoGenerate] - タイトル自動生成フラグ (任意, デフォルト: false)
    * @returns {Object} 更新結果
    * ```json
@@ -257,8 +262,9 @@ class Chatbot {
    * ```
    */
   renameConversation(conversationId, name, user, autoGenerate) {
-    if (!conversationId || !user) {
-      throw new Error(`conversationId と user は必須パラメータです`);
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
     }
 
     if (!name && !autoGenerate) {
@@ -287,7 +293,7 @@ class Chatbot {
   /**
    * 会話を削除する
    * @param {string} conversationId - 会話ID (必須, UUID形式)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @returns {Object} 削除結果
    * ```json
    * {
@@ -295,8 +301,9 @@ class Chatbot {
    * }
    */
   deleteConversation(conversationId, user) {
-    if (!conversationId || !user) {
-      throw new Error(`conversationId と user は必須パラメータです`);
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
     }
 
     const payload = { user: user };
@@ -311,7 +318,7 @@ class Chatbot {
   /**
    * ファイルをアップロードする
    * @param {Blob} file - アップロードするファイル (必須, 最大サイズ: 50MB)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    *
    * @returns {Object} アップロード結果 - 以下の構造のJSONオブジェクト
    * ```json
@@ -327,8 +334,9 @@ class Chatbot {
    * ```
    */
   uploadFile(file, user) {
-    if (!file || !user) {
-      throw new Error(`file と user は必須パラメータです`);
+    user = user || this.user;
+    if (!file) {
+      throw new Error(`fileは必須パラメータです`);
     }
 
     // ファイルサイズ検証 (50MB制限)
@@ -381,7 +389,7 @@ class Chatbot {
    * メッセージにフィードバックを送信する
    * @param {string} messageId - メッセージID (必須, UUID形式)
    * @param {string} [rating] - 評価 ( 任意, 高評価：'like'、低評価：'dislike'、取り消し：'null')
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @param {string} [content] - メッセージフィードバックの具体的な内容。(任意)
    *
    * @returns {Object} フィードバック結果 - 以下の構造のJSONオブジェクト
@@ -392,8 +400,9 @@ class Chatbot {
    * ```
    */
   sendFeedback(messageId, rating, user, content) {
-    if (!messageId || !rating || !user) {
-      throw new Error(`messageId, rating, user は必須パラメータです`);
+    user = user || this.user;
+    if (!messageId) {
+      throw new Error(`messageIdは必須パラメータです`);
     }
 
     if (rating !== "like" && rating !== "dislike" && rating !== "null") {
@@ -421,7 +430,7 @@ class Chatbot {
 
   /**
    * テキストから音声に変換する
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {string} [options.message_id] - メッセージID (任意, UUID形式, 優先的に使用される)
    * @param {string} [options.text] - 音声生成コンテンツ (任意, message_idが指定されていない場合は必須)
@@ -435,6 +444,7 @@ class Chatbot {
    */
 
   textToAudio(user, options) {
+    user = user || this.user;
     if (!user) {
       throw new Error(`user は必須パラメータです`);
     }
@@ -492,7 +502,7 @@ class Chatbot {
   /**
    * 音声からテキストに変換する
    * @param {Blob} file - 音声ファイル (必須)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @returns {Object} テキスト変換結果
    * ```json
    * {
@@ -500,8 +510,9 @@ class Chatbot {
    * }
    */
   audioToText(file, user) {
-    if (!file || !user) {
-      throw new Error(`file と user は必須パラメータです`);
+    user = user || this.user;
+    if (!file) {
+      throw new Error(`fileは必須パラメータです`);
     }
 
     const formData = {
@@ -543,7 +554,7 @@ class Chatbot {
   /**
    * メッセージ生成を停止する
    * @param {string} taskId - タスクID (必須, UUID形式)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @returns {Object} 停止結果
    * ```json
    * {
@@ -552,8 +563,9 @@ class Chatbot {
    * ```
    */
   stopGeneration(taskId, user) {
-    if (!taskId || !user) {
-      throw new Error(`taskId と user は必須パラメータです`);
+    user = user || this.user;
+    if (!taskId) {
+      throw new Error(`taskIdは必須パラメータです`);
     }
 
     const payload = { user: user };
@@ -664,7 +676,7 @@ class Chatbot {
   /**
    * メッセージの推奨質問を取得する
    * @param {string} messageId - メッセージID (必須, UUID形式)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    *
    * @returns {Object} 推奨質問リスト - 以下の構造のJSONオブジェクト
    * ```json
@@ -679,8 +691,9 @@ class Chatbot {
    * ```
    */
   getSuggestedQuestions(messageId, user) {
-    if (!messageId || !user) {
-      throw new Error(`messageId と user は必須パラメータです`);
+    user = user || this.user;
+    if (!messageId) {
+      throw new Error(`messageIdは必須パラメータです`);
     }
 
     const params = { user: user };
@@ -736,7 +749,7 @@ class Chatbot {
   /**
    * 会話変数を取得する
    * @param {string} conversationId - 会話ID (必須, UUID形式)
-   * @param {string} user - ユーザー識別子 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {string} [options.last_id] - 現在のページの最後の記録ID (任意, UUID形式, デフォルト: null)
    * @param {number} [options.limit] - 返す記録数 (任意, デフォルト: 20, 最小: 1, 最大: 100)
@@ -770,8 +783,9 @@ class Chatbot {
    * ```
    */
   getConversationVariables(conversationId, user, options) {
-    if (!conversationId || !user) {
-      throw new Error(`conversationId と user は必須パラメータです`);
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
     }
 
     options = options || {};
