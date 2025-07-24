@@ -42,6 +42,7 @@ const TEST_CONSTANTS = {
  * 実際のChatbotクラスが利用できない環境での継承エラー回避用
  */
 if (typeof Chatbot === "undefined") {
+  // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   class Chatbot {
     constructor(apiKey, baseUrl) {
       this.apiKey = apiKey;
@@ -68,14 +69,14 @@ if (typeof Chatbot === "undefined") {
       });
     }
 
-    getConversations(user, options) {
+    getConversations(user, _options) {
       if (!user) {
         throw new Error(`user は必須パラメータです`);
       }
       return this._makeRequest("/conversations", "GET");
     }
 
-    getConversationMessages(conversationId, user, options) {
+    getConversationMessages(conversationId, user, _options) {
       if (!conversationId || !user) {
         throw new Error(`conversationId と user は必須パラメータです`);
       }
@@ -103,7 +104,7 @@ if (typeof Chatbot === "undefined") {
       return { id: "file-stub-id", name: "test-file.pdf" };
     }
 
-    sendFeedback(messageId, rating, user, content) {
+    sendFeedback(messageId, rating, user, _content) {
       if (!messageId || !rating || !user) {
         throw new Error(`messageId, rating, user は必須パラメータです`);
       }
@@ -143,7 +144,7 @@ if (typeof Chatbot === "undefined") {
         .join("&");
     }
 
-    _parseStreamingResponse(response) {
+    _parseStreamingResponse(_response) {
       // スタブ実装
       return {
         answer: "streaming-response",
@@ -187,7 +188,7 @@ if (typeof Chatbot === "undefined") {
     }
 
     // デフォルトの_makeRequest実装（MockChatbotでオーバーライドされる）
-    _makeRequest(endpoint, method, payload) {
+    _makeRequest(_endpoint, _method, _payload) {
       throw new Error("_makeRequest method should be implemented by subclass");
     }
   }
@@ -1415,7 +1416,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new Chatbot("test-key");
 
       // 現在時刻の処理が正常に行われることを確認
-      const now = Date.now();
+      Date.now();
       chatbot._checkRateLimit();
 
       this.framework.assertTrue(
@@ -1488,11 +1489,11 @@ class ComprehensiveMockTestSuite {
 
     // 49. ガベージコレクション対応
     this.framework.test("ガベージコレクション対応", () => {
-      const chatbot = new Chatbot("test-key");
+      new Chatbot("test-key");
 
       // 大量のオブジェクトを作成・破棄
       for (let i = 0; i < TEST_CONSTANTS.MEMORY_TEST_COUNT; i++) {
-        const tempObj = { data: new Array(100).fill(i) };
+        ({ data: new Array(100).fill(i) });
         // オブジェクトは自動的にGCの対象となる
       }
 
