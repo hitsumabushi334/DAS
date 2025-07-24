@@ -427,6 +427,7 @@ class Chatbot {
       throw new Error(`messageIdは必須パラメータです`);
     }
 
+    rating = rating || "null"; // デフォルトは取り消し
     if (rating !== "like" && rating !== "dislike" && rating !== "null") {
       throw new Error(
         `rating は "like" または "dislike"または "null" である必要があります`,
@@ -958,8 +959,8 @@ class Chatbot {
                 if (json.conversation_id) {
                   conversationId = json.conversation_id;
                 }
-                if (json.id) {
-                  messageId = json.id;
+                if (json.message_id) {
+                  messageId = json.message_id;
                 }
                 if (json.task_id) {
                   taskId = json.task_id;
@@ -1643,7 +1644,7 @@ class Chatflow {
     if (!messageId) {
       throw new Error(`messageIdは必須パラメータです`);
     }
-
+    rating = rating || "null"; // デフォルトは取り消し
     if (rating !== "like" && rating !== "dislike" && rating !== "null") {
       throw new Error(
         `rating は "like" または "dislike"または "null" である必要があります`,
