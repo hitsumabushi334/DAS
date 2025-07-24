@@ -11,7 +11,7 @@
  * 3. TEST_USER: テスト用ユーザーID
  */
 const REAL_API_TEST_CONFIG = {
-  API_KEY: "app-p6x2K8DG029CACsrSbbX7jXZ", // 実際のAPIキーに変更してください
+  API_KEY: "", // 実際のAPIキーに変更してください
   BASE_URL: "https://api.dify.ai/v1", // 実際のDifyインスタンスURLに変更してください
   TEST_USER: "test-user-api-real", // テスト用ユーザーID
   ENABLE_FILE_TESTS: true, // ファイルテストを有効にする場合はtrueに設定
@@ -372,7 +372,9 @@ function testRealApiGetAppParameters() {
   if (params.user_input_form) {
     Logger.log("ユーザー入力フォーム設定あり");
     Logger.log(
-      `テキスト入力設定: ${params.user_input_form.text_input?.variable || "なし"}`
+      `テキスト入力設定: ${
+        params.user_input_form.text_input?.variable || "なし"
+      }`
     );
     Logger.log(
       `段落入力設定: ${params.user_input_form.paragraph?.variable || "なし"}`
