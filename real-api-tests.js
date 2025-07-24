@@ -223,10 +223,11 @@ function checkRealApiTestConfig() {
  * テスト用Chatbotインスタンス作成
  */
 function createTestChatbot() {
-  return new Chatbot(
-    REAL_API_TEST_CONFIG.API_KEY,
-    REAL_API_TEST_CONFIG.BASE_URL
-  );
+  return new Chatbot({
+    apiKey: REAL_API_TEST_CONFIG.API_KEY,
+    user: "test-user",
+    baseUrl: REAL_API_TEST_CONFIG.BASE_URL
+  });
 }
 
 // ================== 実際のAPIテスト関数群 ==================

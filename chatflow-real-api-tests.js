@@ -225,11 +225,11 @@ function checkRealApiTestConfigChatflow() {
  * テスト用Chatflowインスタンス作成
  */
 function createTestChatflow() {
-  return new Chatflow(
-    REAL_API_TEST_CONFIG_CHATFLOW.API_KEY,
-    REAL_API_TEST_CONFIG_CHATFLOW.TEST_USER,
-    REAL_API_TEST_CONFIG_CHATFLOW.BASE_URL,
-  );
+  return new Chatflow({
+    apiKey: REAL_API_TEST_CONFIG_CHATFLOW.API_KEY,
+    user: REAL_API_TEST_CONFIG_CHATFLOW.TEST_USER,
+    baseUrl: REAL_API_TEST_CONFIG_CHATFLOW.BASE_URL,
+  });
 }
 
 // ================== 実際のAPIテスト関数群 ==================

@@ -18,9 +18,10 @@ const HTTP_STATUS = {
 
 /**
  * Chatbotクラス - Difyのチャットボット機能へのアクセス
- * @param {string} apiKey - Dify APIキー (必須)
- * @param {string} user - ユーザー識別子 (必須, 未指定時はクラスのuserプロパティを使用)
- * @param {string} [baseUrl] - Dify APIのベースURL (任意, デフォルト: "https://api.dify.ai/v1")
+ * @param {Object} options - 初期化オプション
+ * @param {string} options.apiKey - Dify APIキー (必須)
+ * @param {string} options.user - ユーザー識別子 (必須, 未指定時はクラスのuserプロパティを使用)
+ * @param {string} [options.baseUrl] - Dify APIのベースURL (任意, デフォルト: "https://api.dify.ai/v1")
  *
  * @property {string} apiKey - Dify APIキー
  * @property {string} baseUrl - Dify APIのベースURL
@@ -46,7 +47,8 @@ const HTTP_STATUS = {
  * @property {string} openingStatement - オープニングメッセージ
  */
 class Chatbot {
-  constructor(apiKey, user, baseUrl) {
+  constructor(options) {
+    const { apiKey, user, baseUrl } = options;
     this.apiKey = apiKey;
     this.baseUrl = baseUrl || "https://api.dify.ai/v1";
     this.user = user;
@@ -1234,9 +1236,10 @@ class Chatbot {
 
 /**
  * Chatflowクラス - Difyのチャットフロー機能へのアクセス
- * @param {string} apiKey - Dify APIキー (必須)
- * @param {string} user - ユーザー識別子 (必須, 未指定時はクラスのuserプロパティを使用)
- * @param {string} [baseUrl] - Dify APIのベースURL (任意, デフォルト: "https://api.dify.ai/v1")
+ * @param {Object} options - 初期化オプション
+ * @param {string} options.apiKey - Dify APIキー (必須)
+ * @param {string} options.user - ユーザー識別子 (必須, 未指定時はクラスのuserプロパティを使用)
+ * @param {string} [options.baseUrl] - Dify APIのベースURL (任意, デフォルト: "https://api.dify.ai/v1")
  *
  * @property {string} apiKey - Dify APIキー
  * @property {string} baseUrl - Dify APIのベースURL
@@ -1262,7 +1265,8 @@ class Chatbot {
  * @property {string} openingStatement - オープニングメッセージ
  */
 class Chatflow {
-  constructor(apiKey, user, baseUrl) {
+  constructor(options) {
+    const { apiKey, user, baseUrl } = options;
     this.apiKey = apiKey;
     this.baseUrl = baseUrl || "https://api.dify.ai/v1";
     this.user = user;

@@ -492,14 +492,14 @@ class ComprehensiveMockTestSuite {
 
     // 1. コンストラクタテスト - 正常ケース
     this.framework.test("コンストラクタ - 正常ケース", () => {
-      const chatbot = new Chatbot("test-api-key", "https://api.dify.ai/v1");
+      const chatbot = new Chatbot({ apiKey: "test-api-key", user: "test-user", baseUrl: "https://api.dify.ai/v1" });
       this.framework.assertEqual(chatbot.apiKey, "test-api-key");
       this.framework.assertEqual(chatbot.baseUrl, "https://api.dify.ai/v1");
     });
 
     // 2. コンストラクタテスト - デフォルトURL
     this.framework.test("コンストラクタ - デフォルトURL", () => {
-      const chatbot = new Chatbot("test-api-key");
+      const chatbot = new Chatbot({ apiKey: "test-api-key", user: "test-user" });
       this.framework.assertEqual(chatbot.baseUrl, "https://api.dify.ai/v1");
     });
 
