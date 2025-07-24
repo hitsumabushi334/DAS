@@ -868,9 +868,10 @@ function runBasicRealApiTests() {
 // ================== GAS実行用のメイン関数 ==================
 
 /**
- * Google Apps Script実行用のメイン関数
+ * Google Apps Script実行用のメイン関数（実際のAPIテスト用）
+ * 注意: この関数は明示的に呼び出す必要があります
  */
-function main() {
+function runRealApiTestsMain() {
   return runAllRealApiTests();
 }
 
