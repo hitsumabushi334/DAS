@@ -74,7 +74,11 @@ class Chatbot {
    * @param {Object} [options.inputs] - アプリによって定義された変数値 (任意, デフォルト: {})
    * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'streaming')
    * @param {string} [options.conversation_id] - 会話ID (任意, UUID形式, 続きの会話の場合に指定)
-   * @param {Array} [options.files] - ファイルリスト (任意)
+   * @param {Array<object>} [options.files] - ファイルリスト (任意)
+   * @param {string} [options.files[].type] - ファイルタイプ (必須, 現在は'image'のみの対応)
+   * @param {string} [options.files[].transfer_method] - ファイル転送方法,画像URLの場合はremote_url / ファイルアップロードの場合はlocal_file )
+   * @param {string} [options.files[].url] - ファイルURL (任意, transfer_methodがremote_urlの場合に指定)
+   * @param {string} [options.files[].upload_file_id] - ファイルID (任意, transfer_methodがlocal_fileの場合に指定.事前にuploadFileでアップロードしたファイルのID)
    * @param {boolean} [options.auto_generate_name] - タイトル自動生成 (任意, デフォルト: true)
    *
    * @returns {Object} 応答モードによって異なる構造のJSONオブジェクト
@@ -1292,7 +1296,11 @@ class Chatflow {
    * @param {Object} [options.inputs] - アプリによって定義された変数値 (任意, デフォルト: {})
    * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'streaming')
    * @param {string} [options.conversation_id] - 会話ID (任意, UUID形式, 続きの会話の場合に指定)
-   * @param {Array} [options.files] - ファイルリスト (任意)
+   * @param {Array<object>} [options.files] - ファイルリスト (任意)
+   * @param {string} [options.files[].type] - ファイルタイプ (必須, 現在は'image'のみの対応)
+   * @param {string} [options.files[].transfer_method] - ファイル転送方法,画像URLの場合はremote_url / ファイルアップロードの場合はlocal_file )
+   * @param {string} [options.files[].url] - ファイルURL (任意, transfer_methodがremote_urlの場合に指定)
+   * @param {string} [options.files[].upload_file_id] - ファイルID (任意, transfer_methodがlocal_fileの場合に指定.事前にuploadFileでアップロードしたファイルのID)
    * @param {boolean} [options.auto_generate_name] - タイトル自動生成 (任意, デフォルト: true)
    *
    * @returns {Object} 応答モードによって異なる構造のJSONオブジェクト
