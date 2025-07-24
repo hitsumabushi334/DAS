@@ -229,7 +229,7 @@ class Chatbot {
 
     options = options || {};
 
-    const params = { user: user, conversationId: conversationId };
+    const params = { user: user, conversation_id: conversationId };
     if (options.first_id) params.first_id = options.first_id;
     if (options.limit) params.limit = options.limit;
 

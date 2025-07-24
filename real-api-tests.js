@@ -11,12 +11,12 @@
  * 3. TEST_USER: テスト用ユーザーID
  */
 const REAL_API_TEST_CONFIG = {
-  API_KEY: "app-xxxxxxxxxxxxxxxxxx", // 実際のAPIキーに変更してください
+  API_KEY: "app-p6x2K8DG029CACsrSbbX7jXZ", // 実際のAPIキーに変更してください
   BASE_URL: "https://api.dify.ai/v1", // 実際のDifyインスタンスURLに変更してください
   TEST_USER: "test-user-api-real", // テスト用ユーザーID
-  ENABLE_FILE_TESTS: false, // ファイルテストを有効にする場合はtrueに設定
-  ENABLE_AUDIO_TESTS: false, // 音声テストを有効にする場合はtrueに設定
-  ENABLE_DESTRUCTIVE_TESTS: false, // 削除系テストを有効にする場合はtrueに設定
+  ENABLE_FILE_TESTS: true, // ファイルテストを有効にする場合はtrueに設定
+  ENABLE_AUDIO_TESTS: true, // 音声テストを有効にする場合はtrueに設定
+  ENABLE_DESTRUCTIVE_TESTS: true, // 削除系テストを有効にする場合はtrueに設定
   TEST_TIMEOUT: 30000, // テストタイムアウト（ミリ秒）
 };
 
@@ -35,7 +35,7 @@ class RealApiTestFramework {
   assertEqual(actual, expected, message) {
     if (actual !== expected) {
       throw new Error(
-        `アサーション失敗: ${message}. 期待値: ${expected}, 実際の値: ${actual}`,
+        `アサーション失敗: ${message}. 期待値: ${expected}, 実際の値: ${actual}`
       );
     }
   }
@@ -49,7 +49,7 @@ class RealApiTestFramework {
   assertNotNull(value, message) {
     if (value === null || value === undefined) {
       throw new Error(
-        `アサーション失敗: ${message}. 値がnullまたはundefinedです`,
+        `アサーション失敗: ${message}. 値がnullまたはundefinedです`
       );
     }
   }
@@ -57,7 +57,7 @@ class RealApiTestFramework {
   assertHasProperty(obj, property, message) {
     if (!obj || !obj.hasOwnProperty(property)) {
       throw new Error(
-        `アサーション失敗: ${message}. プロパティ '${property}' が存在しません`,
+        `アサーション失敗: ${message}. プロパティ '${property}' が存在しません`
       );
     }
   }
@@ -71,7 +71,7 @@ class RealApiTestFramework {
   assertIsObject(value, message) {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       throw new Error(
-        `アサーション失敗: ${message}. 値がオブジェクトではありません`,
+        `アサーション失敗: ${message}. 値がオブジェクトではありません`
       );
     }
   }
@@ -189,24 +189,30 @@ function checkRealApiTestConfig() {
 
   if (REAL_API_TEST_CONFIG.API_KEY === "app-xxxxxxxxxxxxxxxxxx") {
     Logger.log(
-      "⚠️  警告: API_KEYがデフォルト値です。実際のDify APIキーに変更してください",
+      "⚠️  警告: API_KEYがデフォルト値です。実際のDify APIキーに変更してください"
     );
     return false;
   }
 
   Logger.log(
-    `✅ API_KEY: 設定済み (${REAL_API_TEST_CONFIG.API_KEY.substring(0, 10)}...)`,
+    `✅ API_KEY: 設定済み (${REAL_API_TEST_CONFIG.API_KEY.substring(0, 10)}...)`
   );
   Logger.log(`✅ BASE_URL: ${REAL_API_TEST_CONFIG.BASE_URL}`);
   Logger.log(`✅ TEST_USER: ${REAL_API_TEST_CONFIG.TEST_USER}`);
   Logger.log(
-    `📁 ファイルテスト: ${REAL_API_TEST_CONFIG.ENABLE_FILE_TESTS ? "有効" : "無効"}`,
+    `📁 ファイルテスト: ${
+      REAL_API_TEST_CONFIG.ENABLE_FILE_TESTS ? "有効" : "無効"
+    }`
   );
   Logger.log(
-    `🎵 音声テスト: ${REAL_API_TEST_CONFIG.ENABLE_AUDIO_TESTS ? "有効" : "無効"}`,
+    `🎵 音声テスト: ${
+      REAL_API_TEST_CONFIG.ENABLE_AUDIO_TESTS ? "有効" : "無効"
+    }`
   );
   Logger.log(
-    `🗑️  削除系テスト: ${REAL_API_TEST_CONFIG.ENABLE_DESTRUCTIVE_TESTS ? "有効" : "無効"}`,
+    `🗑️  削除系テスト: ${
+      REAL_API_TEST_CONFIG.ENABLE_DESTRUCTIVE_TESTS ? "有効" : "無効"
+    }`
   );
   Logger.log("");
 
@@ -219,7 +225,7 @@ function checkRealApiTestConfig() {
 function createTestChatbot() {
   return new Chatbot(
     REAL_API_TEST_CONFIG.API_KEY,
-    REAL_API_TEST_CONFIG.BASE_URL,
+    REAL_API_TEST_CONFIG.BASE_URL
   );
 }
 
@@ -234,18 +240,18 @@ function testRealApiSendMessageBlocking() {
   const response = chatbot.sendMessage(
     "こんにちは！テストメッセージです。",
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   realApiTestFramework.assertNotNull(response, "レスポンスが存在すること");
   realApiTestFramework.assertHasProperty(
     response,
     "answer",
-    "answerプロパティが存在すること",
+    "answerプロパティが存在すること"
   );
   realApiTestFramework.assertIsString(
     response.answer,
-    "answerが文字列であること",
+    "answerが文字列であること"
   );
 
   Logger.log(`受信した回答: ${response.answer}`);
@@ -254,7 +260,7 @@ function testRealApiSendMessageBlocking() {
   if (response.conversation_id) {
     realApiTestFramework.assertIsString(
       response.conversation_id,
-      "conversation_idが文字列であること",
+      "conversation_idが文字列であること"
     );
     Logger.log(`会話ID: ${response.conversation_id}`);
   }
@@ -262,7 +268,7 @@ function testRealApiSendMessageBlocking() {
   if (response.message_id) {
     realApiTestFramework.assertIsString(
       response.message_id,
-      "message_idが文字列であること",
+      "message_idが文字列であること"
     );
     Logger.log(`メッセージID: ${response.message_id}`);
   }
@@ -277,17 +283,17 @@ function testRealApiSendMessageStreaming() {
   const response = chatbot.sendMessage(
     "ストリーミングテストです。短い応答をお願いします。",
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "streaming" },
+    { response_mode: "streaming" }
   );
 
   realApiTestFramework.assertNotNull(
     response,
-    "ストリーミングレスポンスが存在すること",
+    "ストリーミングレスポンスが存在すること"
   );
   realApiTestFramework.assertHasProperty(
     response,
     "answer",
-    "answerプロパティが存在すること",
+    "answerプロパティが存在すること"
   );
 
   Logger.log(`ストリーミング回答: ${response.answer}`);
@@ -305,18 +311,18 @@ function testRealApiGetConversations() {
 
   const conversations = chatbot.getConversations(
     REAL_API_TEST_CONFIG.TEST_USER,
-    { limit: 10 },
+    { limit: 10 }
   );
 
   realApiTestFramework.assertNotNull(conversations, "会話リストが存在すること");
   realApiTestFramework.assertHasProperty(
     conversations,
     "data",
-    "dataプロパティが存在すること",
+    "dataプロパティが存在すること"
   );
   realApiTestFramework.assertIsArray(
     conversations.data,
-    "dataが配列であること",
+    "dataが配列であること"
   );
 
   Logger.log(`取得した会話数: ${conversations.data.length}`);
@@ -326,7 +332,7 @@ function testRealApiGetConversations() {
     realApiTestFramework.assertHasProperty(
       firstConversation,
       "id",
-      "会話にIDが存在すること",
+      "会話にIDが存在すること"
     );
     Logger.log(`最初の会話ID: ${firstConversation.id}`);
   }
@@ -365,9 +371,38 @@ function testRealApiGetAppParameters() {
 
   if (params.user_input_form) {
     Logger.log("ユーザー入力フォーム設定あり");
+    Logger.log(
+      `テキスト入力設定: ${params.user_input_form.text_input?.variable || "なし"}`
+    );
+    Logger.log(
+      `段落入力設定: ${params.user_input_form.paragraph?.variable || "なし"}`
+    );
+    Logger.log(
+      `選択入力設定: ${params.user_input_form.select?.variable || "なし"}`
+    );
   }
   if (params.file_upload) {
-    Logger.log(`ファイルアップロード設定: ${params.file_upload.allowed}`);
+    Logger.log(
+      `ファイルアップロード設定: 画像アップロード=${
+        params.file_upload.image?.enabled || false
+      }`
+    );
+    Logger.log(
+      `ファイルアップロード設定: ドキュメントアップロード=${
+        params.file_upload.document?.enabled || false
+      }`
+    );
+    Logger.log(
+      `ファイルアップロード設定: 音声アップロード=${
+        params.file_upload.audio?.enabled || false
+      }`
+    );
+    Logger.log(
+      `ファイルアップロード設定: ビデオアップロード=${
+        params.file_upload.video?.enabled || false
+      }`
+    );
+    Logger.log(`カスタム設定：${params.custom?.enabled || false}`);
   }
 }
 
@@ -380,7 +415,7 @@ function testRealApiGetConversationMessages() {
   // まず会話リストを取得
   const conversations = chatbot.getConversations(
     REAL_API_TEST_CONFIG.TEST_USER,
-    { limit: 1 },
+    { limit: 1 }
   );
 
   if (conversations.data && conversations.data.length > 0) {
@@ -389,22 +424,22 @@ function testRealApiGetConversationMessages() {
     const messages = chatbot.getConversationMessages(
       conversationId,
       REAL_API_TEST_CONFIG.TEST_USER,
-      { limit: 5 },
+      { limit: 5 }
     );
 
     realApiTestFramework.assertNotNull(
       messages,
-      "会話メッセージが存在すること",
+      "会話メッセージが存在すること"
     );
     realApiTestFramework.assertHasProperty(
       messages,
       "data",
-      "dataプロパティが存在すること",
+      "dataプロパティが存在すること"
     );
     realApiTestFramework.assertIsArray(messages.data, "dataが配列であること");
 
     Logger.log(
-      `会話 ${conversationId} のメッセージ数: ${messages.data.length}`,
+      `会話 ${conversationId} のメッセージ数: ${messages.data.length}`
     );
   } else {
     Logger.log("テスト用会話が存在しないため、会話履歴テストをスキップ");
@@ -421,7 +456,7 @@ function testRealApiSendFeedback() {
   const response = chatbot.sendMessage(
     "フィードバックテスト用メッセージ",
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   if (response.message_id) {
@@ -434,14 +469,14 @@ function testRealApiSendFeedback() {
 
     realApiTestFramework.assertNotNull(
       feedback,
-      "フィードバック応答が存在すること",
+      "フィードバック応答が存在すること"
     );
     Logger.log(
-      `メッセージ ${response.message_id} にLikeフィードバック送信成功`,
+      `メッセージ ${response.message_id} にLikeフィードバック送信成功`
     );
   } else {
     Logger.log(
-      "メッセージIDが取得できないため、フィードバックテストをスキップ",
+      "メッセージIDが取得できないため、フィードバックテストをスキップ"
     );
   }
 }
@@ -456,14 +491,14 @@ function testRealApiGetSuggestedQuestions() {
   const response = chatbot.sendMessage(
     "推奨質問テスト用メッセージ",
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   if (response.message_id) {
     try {
       const suggestions = chatbot.getSuggestedQuestions(
         response.message_id,
-        REAL_API_TEST_CONFIG.TEST_USER,
+        REAL_API_TEST_CONFIG.TEST_USER
       );
 
       realApiTestFramework.assertNotNull(suggestions, "推奨質問が存在すること");
@@ -487,7 +522,7 @@ function testRealApiGetSuggestedQuestions() {
 function testRealApiUploadFile() {
   if (!REAL_API_TEST_CONFIG.ENABLE_FILE_TESTS) {
     Logger.log(
-      "ファイルテストが無効のため、ファイルアップロードテストをスキップ",
+      "ファイルテストが無効のため、ファイルアップロードテストをスキップ"
     );
     return;
   }
@@ -500,23 +535,23 @@ function testRealApiUploadFile() {
   const testFile = Utilities.newBlob(
     testContent,
     "text/plain",
-    "test-file.txt",
+    "test-file.txt"
   );
 
   try {
     const uploadResult = chatbot.uploadFile(
       testFile,
-      REAL_API_TEST_CONFIG.TEST_USER,
+      REAL_API_TEST_CONFIG.TEST_USER
     );
 
     realApiTestFramework.assertNotNull(
       uploadResult,
-      "ファイルアップロード結果が存在すること",
+      "ファイルアップロード結果が存在すること"
     );
     realApiTestFramework.assertHasProperty(
       uploadResult,
       "id",
-      "ファイルIDが存在すること",
+      "ファイルIDが存在すること"
     );
 
     Logger.log(`ファイルアップロード成功: ${uploadResult.id}`);
@@ -545,7 +580,7 @@ function testRealApiRenameConversation() {
   const response = chatbot.sendMessage(
     "会話名変更テスト用メッセージ",
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   if (response.conversation_id) {
@@ -555,15 +590,15 @@ function testRealApiRenameConversation() {
       const renameResult = chatbot.renameConversation(
         response.conversation_id,
         newName,
-        REAL_API_TEST_CONFIG.TEST_USER,
+        REAL_API_TEST_CONFIG.TEST_USER
       );
 
       realApiTestFramework.assertNotNull(
         renameResult,
-        "会話名変更結果が存在すること",
+        "会話名変更結果が存在すること"
       );
       Logger.log(
-        `会話 ${response.conversation_id} の名前を "${newName}" に変更成功`,
+        `会話 ${response.conversation_id} の名前を "${newName}" に変更成功`
       );
     } catch (error) {
       Logger.log(`会話名変更エラー: ${error.message}`);
@@ -587,7 +622,7 @@ function testRealApiErrorHandling() {
   } catch (error) {
     realApiTestFramework.assertTrue(
       error.message.includes("query"),
-      "queryに関するエラーメッセージが含まれること",
+      "queryに関するエラーメッセージが含まれること"
     );
     Logger.log(`期待されたエラー: ${error.message}`);
   }
@@ -599,7 +634,7 @@ function testRealApiErrorHandling() {
   } catch (error) {
     realApiTestFramework.assertTrue(
       error.message.includes("user"),
-      "userに関するエラーメッセージが含まれること",
+      "userに関するエラーメッセージが含まれること"
     );
     Logger.log(`期待されたエラー: ${error.message}`);
   }
@@ -608,7 +643,7 @@ function testRealApiErrorHandling() {
   try {
     chatbot.getConversationMessages(
       "invalid-conversation-id",
-      REAL_API_TEST_CONFIG.TEST_USER,
+      REAL_API_TEST_CONFIG.TEST_USER
     );
     realApiTestFramework.assertTrue(false, "無効な会話IDでエラーが発生すべき");
   } catch (error) {
@@ -635,7 +670,7 @@ function testRealApiRateLimit() {
       const response = chatbot.sendMessage(
         `レート制限テスト ${i + 1}`,
         REAL_API_TEST_CONFIG.TEST_USER,
-        { response_mode: "blocking" },
+        { response_mode: "blocking" }
       );
       promises.push(response);
       Logger.log(`リクエスト ${i + 1} 成功`);
@@ -666,7 +701,7 @@ function testRealApiPerformance() {
   const response = chatbot.sendMessage(
     "パフォーマンステスト用メッセージ。応答時間を測定しています。",
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   const endTime = new Date();
@@ -674,7 +709,7 @@ function testRealApiPerformance() {
 
   realApiTestFramework.assertNotNull(
     response,
-    "パフォーマンステスト応答が存在すること",
+    "パフォーマンステスト応答が存在すること"
   );
   Logger.log(`API応答時間: ${duration}ms`);
 
@@ -698,12 +733,12 @@ function testRealApiLargeData() {
   const response = chatbot.sendMessage(
     largeMessage,
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   realApiTestFramework.assertNotNull(
     response,
-    "大量データテスト応答が存在すること",
+    "大量データテスト応答が存在すること"
   );
   Logger.log(`大量データ（${largeMessage.length}文字）送信成功`);
 }
@@ -720,14 +755,173 @@ function testRealApiUnicodeAndSpecialChars() {
   const response = chatbot.sendMessage(
     specialMessage,
     REAL_API_TEST_CONFIG.TEST_USER,
-    { response_mode: "blocking" },
+    { response_mode: "blocking" }
   );
 
   realApiTestFramework.assertNotNull(
     response,
-    "特殊文字テスト応答が存在すること",
+    "特殊文字テスト応答が存在すること"
   );
   Logger.log("特殊文字・Unicode送信成功");
+}
+
+/**
+ * 16. インスタンスプロパティ保持確認テスト
+ */
+function testRealApiInstancePropertyRetention() {
+  const chatbot = createTestChatbot();
+
+  // インスタンス作成後の基本プロパティ確認
+  realApiTestFramework.assertNotNull(
+    chatbot.apiKey,
+    "apiKeyプロパティが保持されていること"
+  );
+  realApiTestFramework.assertNotNull(
+    chatbot.baseUrl,
+    "baseUrlプロパティが保持されていること"
+  );
+  realApiTestFramework.assertEqual(
+    chatbot.baseUrl,
+    REAL_API_TEST_CONFIG.BASE_URL,
+    "baseUrlが正しく設定されていること"
+  );
+
+  // キャッシュプロパティの確認
+  realApiTestFramework.assertNotNull(
+    chatbot._cache,
+    "キャッシュプロパティが初期化されていること"
+  );
+  realApiTestFramework.assertIsObject(
+    chatbot._cache,
+    "キャッシュがオブジェクト型であること"
+  );
+  realApiTestFramework.assertEqual(
+    chatbot._cacheTimeout,
+    5 * 60 * 1000,
+    "キャッシュタイムアウトが正しく設定されていること"
+  );
+
+  // レート制限プロパティの確認
+  realApiTestFramework.assertNotNull(
+    chatbot._rateLimitRequests,
+    "レート制限配列が初期化されていること"
+  );
+  realApiTestFramework.assertIsArray(
+    chatbot._rateLimitRequests,
+    "レート制限配列が配列型であること"
+  );
+  realApiTestFramework.assertEqual(
+    chatbot._rateLimitWindow,
+    60 * 1000,
+    "レート制限ウィンドウが正しく設定されていること"
+  );
+  realApiTestFramework.assertEqual(
+    chatbot._rateLimitMax,
+    60,
+    "レート制限最大値が正しく設定されていること"
+  );
+
+  // アプリケーション機能プロパティの確認（初期化後）
+  if (chatbot.features) {
+    realApiTestFramework.assertIsObject(
+      chatbot.features,
+      "featuresプロパティがオブジェクト型であること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.features,
+      "speechToText",
+      "speechToText機能フラグが存在すること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.features,
+      "textToSpeech",
+      "textToSpeech機能フラグが存在すること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.features,
+      "fileUpload",
+      "fileUpload機能フラグが存在すること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.features,
+      "suggestedQuestionsAfterAnswer",
+      "suggestedQuestionsAfterAnswer機能フラグが存在すること"
+    );
+  }
+
+  // ユーザー入力フォーム設定の確認
+  if (chatbot.userInput) {
+    realApiTestFramework.assertIsObject(
+      chatbot.userInput,
+      "userInputプロパティがオブジェクト型であること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.userInput,
+      "text_input",
+      "text_input設定が存在すること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.userInput,
+      "paragraph",
+      "paragraph設定が存在すること"
+    );
+    realApiTestFramework.assertHasProperty(
+      chatbot.userInput,
+      "select",
+      "select設定が存在すること"
+    );
+  }
+
+  // システムパラメータの確認
+  if (chatbot.systemParameters) {
+    realApiTestFramework.assertIsObject(
+      chatbot.systemParameters,
+      "systemParametersプロパティがオブジェクト型であること"
+    );
+  }
+
+  // メッセージ送信後のプロパティ維持確認
+  const response = chatbot.sendMessage(
+    "プロパティ保持テスト用メッセージ",
+    REAL_API_TEST_CONFIG.TEST_USER,
+    { response_mode: "blocking" }
+  );
+
+  // メッセージ送信後もプロパティが維持されていることを確認
+  realApiTestFramework.assertEqual(
+    chatbot.apiKey,
+    REAL_API_TEST_CONFIG.API_KEY,
+    "メッセージ送信後もapiKeyが維持されていること"
+  );
+  realApiTestFramework.assertEqual(
+    chatbot.baseUrl,
+    REAL_API_TEST_CONFIG.BASE_URL,
+    "メッセージ送信後もbaseUrlが維持されていること"
+  );
+  realApiTestFramework.assertNotNull(
+    chatbot._cache,
+    "メッセージ送信後もキャッシュプロパティが維持されていること"
+  );
+  realApiTestFramework.assertIsArray(
+    chatbot._rateLimitRequests,
+    "メッセージ送信後もレート制限配列が維持されていること"
+  );
+
+  // レート制限配列にリクエストが追加されたことを確認
+  realApiTestFramework.assertTrue(
+    chatbot._rateLimitRequests.length > 0,
+    "レート制限配列にリクエストが記録されていること"
+  );
+
+  Logger.log("インスタンスプロパティ保持確認テスト完了");
+  Logger.log(`APIキー設定: ${chatbot.apiKey.substring(0, 10)}...`);
+  Logger.log(`ベースURL: ${chatbot.baseUrl}`);
+  Logger.log(`キャッシュエントリ数: ${Object.keys(chatbot._cache).length}`);
+  Logger.log(`レート制限リクエスト数: ${chatbot._rateLimitRequests.length}`);
+
+  if (chatbot.features) {
+    Logger.log(`機能設定: ${JSON.stringify(chatbot.features)}`);
+  }
 }
 
 // ================== メイン実行関数 ==================
@@ -775,6 +969,10 @@ function runAllRealApiTests() {
     { name: "パフォーマンス", func: testRealApiPerformance },
     { name: "大量データ送信", func: testRealApiLargeData },
     { name: "特殊文字・Unicode", func: testRealApiUnicodeAndSpecialChars },
+    {
+      name: "インスタンスプロパティ保持",
+      func: testRealApiInstancePropertyRetention,
+    },
   ];
 
   // 各テストを実行
@@ -826,6 +1024,7 @@ function runSingleRealApiTest(testName) {
     performance: testRealApiPerformance,
     largedata: testRealApiLargeData,
     unicode: testRealApiUnicodeAndSpecialChars,
+    properties: testRealApiInstancePropertyRetention,
   };
 
   const testFunc = testMap[testName.toLowerCase()];
