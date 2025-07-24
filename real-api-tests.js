@@ -429,6 +429,7 @@ function testRealApiSendFeedback() {
       response.message_id,
       "like",
       REAL_API_TEST_CONFIG.TEST_USER,
+      "This is a test feedback content"
     );
 
     realApiTestFramework.assertNotNull(

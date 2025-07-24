@@ -103,14 +103,14 @@ if (typeof Chatbot === "undefined") {
       return { id: "file-stub-id", name: "test-file.pdf" };
     }
 
-    sendFeedback(messageId, rating, user) {
+    sendFeedback(messageId, rating, user, content) {
       if (!messageId || !rating || !user) {
         throw new Error(`messageId, rating, user は必須パラメータです`);
       }
 
-      if (rating !== "like" && rating !== "dislike") {
+      if (rating !== "like" && rating !== "dislike" && rating !== "null") {
         throw new Error(
-          `rating は "like" または "dislike" である必要があります`,
+          `rating は "like" または "dislike"または "null" である必要があります`,
         );
       }
 

@@ -32,6 +32,9 @@ class Chatbot {
     this._rateLimitRequests = [];
     this._rateLimitWindow = 60 * 1000; // 1分間
     this._rateLimitMax = 60; // 最大60リクエスト
+
+    // アプリケーション機能の有効状態を初期化時に取得・保存
+    this._initializeAppFeatures();
   }
 
   /**
@@ -398,14 +401,16 @@ class Chatbot {
         `rating は "like" または "dislike"または "null" である必要があります`
       );
     }
-    if (content && typeof content === "string") {
-      content = content.trim();
-      payload.content = content;
-    }
+
     const payload = {
       rating: rating,
       user: user,
     };
+
+    if (content && typeof content === "string") {
+      content = content.trim();
+      payload.content = content;
+    }
 
     return this._makeRequest(
       "/messages/" + messageId + "/feedbacks",
@@ -561,6 +566,7 @@ class Chatbot {
   }
 
   /**
+   * Todo: こここから実装に問題がないか確認する
    * WebApp設定を取得する
    *
    * @returns {Object} WebApp UI設定情報 - 以下の構造のJSONオブジェクト
@@ -784,6 +790,77 @@ class Chatbot {
   }
 
   /**
+   * アプリケーション機能の有効状態を初期化時に取得・保存する (内部メソッド)
+   * @private
+   */
+  _initializeAppFeatures() {
+    try {
+      const appParams = this.getAppParameters();
+
+      // 各機能の有効状態をプロパティに保存
+      this.features = {
+        speechToText:
+          appParams.speech_to_text && appParams.speech_to_text.enabled,
+        textToSpeech:
+          appParams.text_to_speech && appParams.text_to_speech.enabled,
+        fileUpload:
+          appParams.file_upload &&
+          ((appParams.file_upload.image &&
+            appParams.file_upload.image.enabled) ||
+            (appParams.file_upload.document &&
+              appParams.file_upload.document.enabled) ||
+            (appParams.file_upload.audio &&
+              appParams.file_upload.audio.enabled)),
+        suggestedQuestionsAfterAnswer:
+          appParams.suggested_questions_after_answer &&
+          appParams.suggested_questions_after_answer.enabled,
+      };
+      // ユーザー入力フォームの構成の設定も保存
+      this.userInput = {
+        text_input:
+          appParams.user_input_form.filter((param) => {
+            return param.text_input;
+          }) || [],
+        paragraph:
+          appParams.user_input_form.filter((param) => {
+            return param.paragraph;
+          }) || [],
+        select:
+          appParams.user_input_form.filter((param) => {
+            return param.select;
+          }) || [],
+      };
+      // システムパラメータも保存
+      this.systemParameters = appParams.system_parameters || {};
+
+      // 推奨質問も保存
+      this.suggestedQuestions = appParams.suggested_questions || [];
+
+      // オープニングステートメントも保存
+      this.openingStatement = appParams.opening_statement || "";
+    } catch (error) {
+      // 初期化時のエラーは警告として記録し、デフォルト値を設定
+      Logger.log(
+        "アプリケーション機能の初期化中にエラーが発生しました: " + error.message
+      );
+      this.features = {
+        speechToText: false,
+        textToSpeech: false,
+        fileUpload: false,
+        suggestedQuestionsAfterAnswer: false,
+      };
+      this.userInput = {
+        text_input: [],
+        paragraph: [],
+        select: [],
+      };
+      this.systemParameters = {};
+      this.suggestedQuestions = [];
+      this.openingStatement = "";
+    }
+  }
+
+  /**
    * クエリ文字列を生成する (内部メソッド)
    * @private
    * @param {Object} params - パラメータオブジェクト
@@ -816,6 +893,9 @@ class Chatbot {
       let messageId = null;
       let taskId = null;
       let metadata = null;
+      let createdAt = null;
+      let fileId = null;
+      let fileUrl = null;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -962,7 +1042,6 @@ class Chatbot {
                 throw new Error(
                   `ストリーミングエラー: ${json.message || json.code}`
                 );
-                break;
               default:
                 Logger.log(
                   "Unknown event: " + json.event + " - " + JSON.stringify(json)
