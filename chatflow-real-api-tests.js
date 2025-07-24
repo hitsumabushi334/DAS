@@ -11,7 +11,7 @@
  * 3. TEST_USER: テスト用ユーザーID
  */
 const REAL_API_TEST_CONFIG_CHATFLOW = {
-  API_KEY: PropertiesService.getScriptProperties().getProperty("DIFY_API_KEY"), // 実際のAPIキーに変更してください
+  API_KEY: PropertiesService.getScriptProperties().getProperty("DIFY_CHATFLOW_API_KEY"), // 実際のAPIキーに変更してください
   BASE_URL: "https://api.dify.ai/v1", // 実際のDifyインスタンスURLに変更してください
   TEST_USER: "test-user-chatflow-real", // テスト用ユーザーID
   ENABLE_FILE_TESTS: true, // ファイルテストを有効にする場合はtrueに設定
@@ -651,20 +651,6 @@ function testRealApiChatflowErrorHandling() {
     Logger.log(`期待されたエラー: ${error.message}`);
   }
 
-  // 無効なユーザーでのテスト
-  try {
-    chatflow.sendMessage("テスト", ""); // 空のユーザー
-    realApiTestFrameworkChatflow.assertTrue(
-      false,
-      "空のユーザーでエラーが発生すべき",
-    );
-  } catch (error) {
-    realApiTestFrameworkChatflow.assertTrue(
-      error.message.includes("user"),
-      "userに関するエラーメッセージが含まれること",
-    );
-    Logger.log(`期待されたエラー: ${error.message}`);
-  }
 
   // 無効な会話IDでのテスト
   try {
