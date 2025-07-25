@@ -13,19 +13,7 @@
 **DAS (Dify Application Script)**
 
 Google Apps Script（GAS）から Dify API を簡単に呼び出すためのライブラリプロジェクト
-
-### 主な機能
-
-1. Chatbot、Chatflow、Workflow、TextGenerator の各機能に対応
-2. 統一されたインターフェースで Dify サービスへアクセス可能
-3. GAS 環境での簡単な実装と呼び出し
-
-### 対象 API・エンドポイント
-
-- **Chatbot**: `/chat-messages` - 会話管理、ファイル操作
-- **Chatflow**: `/chat-messages` - フロー実行、パラメータ管理
-- **Workflow**: `/workflows/run` - 実行管理、ログ取得
-- **TextGenerator**: `/completion-messages` - テキスト生成、音声変換
+詳細は@要件定義書.md を参照
 
 ## 基本ルール
 
