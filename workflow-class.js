@@ -18,6 +18,9 @@
  * @property {Array<number>} _rateLimitRequests - レート制限用リクエスト履歴
  * @property {number} _rateLimitWindow - レート制限ウィンドウ (ミリ秒)
  * @property {number} _rateLimitMax - レート制限最大リクエスト数
+ * @property {Object} fileUploadConfig - ファイルアップロード設定 (初期化時に取得)
+ * @property {Object} systemParameters - システムパラメータ (初期化時に取得)
+ * @property {Array} userInputForm - ユーザー入力フォーム設定 (初期化時に取得)
  */
 class Workflow {
   constructor(options) {
@@ -32,13 +35,20 @@ class Workflow {
 
     // レート制限 (1分間に60リクエスト)
     this._rateLimitRequests = [];
-    this._rateLimitWindow = 60 * 1000; // 1分間 
+    this._rateLimitWindow = 60 * 1000; // 1分間
     this._rateLimitMax = 60; // 最大60リクエスト
+
+    // アプリケーション機能の有効状態を初期化時に取得・保存
+    this._initializeAppFeatures();
   }
 
   /**
    * ワークフローを実行する
    * @param {Object} inputs - アプリで定義された変数値の入力 (必須)
+   * @param {string} [inputs.type] - 入力のタイプ (document,image,audio,video,custom)変数がファイルリストの場合必須
+   * @param {string} [inputs.transfer_method] - 転送方法 画像URLの場合はremote_url / ファイルアップロードの場合はlocal_file(変数がファイルリストの場合必須)
+   * @param {string} [inputs.url] - アップロードするファイルの名前 （転送方法がremote_urlの場合必須）
+   * @param {string} [inputs.upload_file_id] - アップロードされたファイルID、事前にファイルアップロードAPIを通じて取得する必要があります（転送方法がlocal_fileの場合）
    * @param {string} [user] - ユーザー識別子 (任意)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'streaming')
@@ -68,6 +78,34 @@ class Workflow {
    *
    * **streaming モードの戻り値:**
    * ストリーミングイベントを解析して結合された結果を返します
+   * ```json
+   * {
+   *   "workflow_run_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "task_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "status": "succeeded",
+   *   "outputs": {},
+   *   "error": null,
+   *   "total_steps": 5,
+   *   "total_tokens": 123,
+   *   "elapsed_time": 12.5,
+   *   "created_at": 123,
+   *   "finished_at": 123,
+   *   "combined_text": "結合されたテキスト出力",
+   *   "text_chunks": [
+   *     {
+   *       "text": "テキストフラグメント",
+   *       "from_variable_selector": ["node_id", "variable_name"]
+   *     }
+   *   ],
+   *   "audio_chunks": [
+   *     {
+   *       "audio": "Base64エンコードされたMP3音声データ",
+   *       "message_id": "message-id",
+   *       "created_at": 123
+   *     }
+   *   ]
+   * }
+   * ```
    */
   runWorkflow(inputs, user, options) {
     user = user || this.user;
@@ -110,7 +148,6 @@ class Workflow {
 
   /**
    * ワークフローログを取得する
-   * @param {string} [user] - ユーザー識別子 (任意)
    * @param {Object} [options] - オプションパラメータ (任意)
    * @param {string} [options.keyword] - 検索するキーワード (任意)
    * @param {string} [options.status] - 実行ステータス (任意, succeeded, failed, stopped, running)
@@ -153,19 +190,20 @@ class Workflow {
    * }
    * ```
    */
-  getWorkflowLogs(user, options) {
-    user = user || this.user;
+  getWorkflowLogs(options) {
     options = options || {};
 
     const params = {};
-    
+
     if (options.keyword) params.keyword = options.keyword;
     if (options.status) params.status = options.status;
     if (options.page) params.page = options.page;
     if (options.limit) params.limit = options.limit;
 
     const queryString = this._buildQueryString(params);
-    const endpoint = queryString ? "/workflows/logs?" + queryString : "/workflows/logs";
+    const endpoint = queryString
+      ? "/workflows/logs?" + queryString
+      : "/workflows/logs";
 
     return this._makeRequest(endpoint, "GET");
   }
@@ -221,7 +259,142 @@ class Workflow {
 
     const payload = { user: user };
 
-    return this._makeRequest("/workflows/tasks/" + taskId + "/stop", "POST", payload);
+    return this._makeRequest(
+      "/workflows/tasks/" + taskId + "/stop",
+      "POST",
+      payload
+    );
+  }
+
+  /**
+   * アプリケーションの基本情報を取得する
+   *
+   * @returns {Object} アプリケーションの基本情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "name": "アプリケーション名",
+   *   "description": "アプリケーションの説明",
+   *   "tags": ["タグ1", "タグ2"]
+   * }
+   * ```
+   */
+  getAppInfo() {
+    return this._makeRequest("/info", "GET");
+  }
+
+  /**
+   * アプリケーションのパラメータ情報を取得する
+   *
+   * @returns {Object} アプリケーションのパラメータ情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "user_input_form": [
+   *     {
+   *       "text-input": {
+   *         "label": "変数表示ラベル名",
+   *         "variable": "変数ID",
+   *         "required": true,
+   *         "default": "デフォルト値"
+   *       }
+   *     }
+   *   ],
+   *   "file_upload": {
+   *     "image": {
+   *       "enabled": true,
+   *       "number_limits": 3,
+   *       "detail": "高解像度",
+   *       "transfer_methods": ["remote_url", "local_file"]
+   *     }
+   *   },
+   *   "system_parameters": {
+   *     "file_size_limit": 50,
+   *     "image_file_size_limit": 10,
+   *     "audio_file_size_limit": 50,
+   *     "video_file_size_limit": 100
+   *   }
+   * }
+   * ```
+   */
+  getAppParameters() {
+    return this._makeRequest("/parameters", "GET");
+  }
+
+  /**
+   * WebApp設定を取得する
+   *
+   * @returns {Object} WebApp設定情報 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "title": "WebApp名",
+   *   "icon_type": "emoji",
+   *   "icon": "🤖",
+   *   "icon_background": "#FFFFFF",
+   *   "icon_url": "https://example.com/icon.png",
+   *   "description": "説明",
+   *   "copyright": "著作権情報",
+   *   "privacy_policy": "プライバシーポリシーのリンク",
+   *   "custom_disclaimer": "カスタム免責事項",
+   *   "default_language": "ja-JP",
+   *   "show_workflow_steps": true
+   * }
+   * ```
+   */
+  getWebAppSettings() {
+    return this._makeRequest("/site", "GET");
+  }
+
+  /**
+   * アプリケーション機能の初期化（内部メソッド）
+   * @private
+   */
+  _initializeAppFeatures() {
+    try {
+      const appParams = this.getAppParameters();
+
+      // 各機能の有効状態をプロパティに保存
+      this.fileUpload = {
+        image: appParams.file_upload.image || {},
+        document: appParams.file_upload.document || {},
+        video: appParams.file_upload.video || {},
+        audio: appParams.file_upload.audio || {},
+      };
+      // ユーザー入力フォームの構成の設定も保存
+      this.userInput = {
+        text_input:
+          appParams.user_input_form.filter((param) => {
+            return param.text_input;
+          }) || [],
+        paragraph:
+          appParams.user_input_form.filter((param) => {
+            return param.paragraph;
+          }) || [],
+        select:
+          appParams.user_input_form.filter((param) => {
+            return param.select;
+          }) || [],
+      };
+      // システムパラメータも保存
+      this.systemParameters = appParams.system_parameters || {};
+    } catch (error) {
+      // 初期化時のエラーは警告として記録し、デフォルト値を設定
+      Logger.log(
+        "アプリケーション機能の初期化中にエラーが発生しました: " + error.message
+      );
+      this.features = {
+        speechToText: false,
+        textToSpeech: false,
+        fileUpload: false,
+        suggestedQuestionsAfterAnswer: false,
+      };
+      this.userInput = {
+        text_input: [],
+        paragraph: [],
+        select: [],
+      };
+      this.systemParameters = {};
+      this.suggestedQuestions = [];
+      this.openingStatement = "";
+    }
   }
 
   /**
@@ -319,13 +492,11 @@ class Workflow {
       let workflowRunId = null;
       let taskId = null;
       let outputs = {};
+      let status = "";
       let error = null;
-      let status = null;
-      let totalSteps = 0;
-      let totalTokens = 0;
-      let elapsedTime = null;
-      let createdAt = null;
-      let finishedAt = null;
+      let combinedText = "";
+      let textChunks = [];
+      let audio = null;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -355,25 +526,56 @@ class Workflow {
                 }
                 break;
 
+              case "text_chunk":
+                Logger.log("text_chunk event received");
+                if (json.data && json.data.text) {
+                  combinedText += json.data.text;
+                  textChunks.push({
+                    text: json.data.text,
+                    from_variable_selector:
+                      json.data.from_variable_selector || null,
+                  });
+                }
+                break;
+
               case "workflow_finished":
                 Logger.log("workflow_finished event received");
                 if (json.data) {
-                  status = json.data.status;
                   outputs = json.data.outputs || {};
                   error = json.data.error;
-                  totalSteps = json.data.total_steps || 0;
-                  totalTokens = json.data.total_tokens || 0;
-                  elapsedTime = json.data.elapsed_time;
-                  finishedAt = json.data.finished_at;
+                  status = json.data.status || "succeeded";
                 }
                 break;
 
               case "node_started":
-                Logger.log("node_started event received");
+                Logger.log(
+                  `node_started event received - Node: ${
+                    json.data?.title || json.data?.node_id
+                  } (${json.data?.node_type})`
+                );
                 break;
 
               case "node_finished":
-                Logger.log("node_finished event received");
+                Logger.log(
+                  `node_finished event received - Node: ${
+                    json.data?.title || json.data?.node_id
+                  } (${json.data?.status})`
+                );
+                break;
+
+              case "tts_message":
+                Logger.log("tts_message event received");
+                if (json.audio) {
+                  audio = json.audio;
+                }
+                break;
+
+              case "tts_message_end":
+                Logger.log("tts_message_end event received");
+                break;
+
+              case "ping":
+                Logger.log("ping event received - connection maintained");
                 break;
 
               case "error":
@@ -387,7 +589,9 @@ class Workflow {
                 break;
             }
           } catch (parseError) {
-            Logger.log(`JSON解析エラー: ${parseError.message}, データ: ${dataStr}`);
+            Logger.log(
+              `JSON解析エラー: ${parseError.message}, データ: ${dataStr}`
+            );
             // 解析エラーは無視して続行
           }
         }
@@ -399,11 +603,9 @@ class Workflow {
         status: status,
         outputs: outputs,
         error: error,
-        total_steps: totalSteps,
-        total_tokens: totalTokens,
-        elapsed_time: elapsedTime,
-        created_at: createdAt,
-        finished_at: finishedAt,
+        combined_text: combinedText,
+        text_chunks: textChunks,
+        audio: audio,
       };
     } else {
       let errorInfo;
@@ -538,8 +740,7 @@ class Workflow {
   _buildQueryString(params) {
     return Object.keys(params)
       .map(
-        (key) =>
-          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
       )
       .join("&");
   }

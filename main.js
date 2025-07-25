@@ -846,14 +846,12 @@ class Chatbot {
           appParams.speech_to_text && appParams.speech_to_text.enabled,
         textToSpeech:
           appParams.text_to_speech && appParams.text_to_speech.enabled,
-        fileUpload:
-          appParams.file_upload &&
-          ((appParams.file_upload.image &&
-            appParams.file_upload.image.enabled) ||
-            (appParams.file_upload.document &&
-              appParams.file_upload.document.enabled) ||
-            (appParams.file_upload.audio &&
-              appParams.file_upload.audio.enabled)),
+        fileUpload: {
+          image: appParams.file_upload.image || {},
+          document: appParams.file_upload.document || {},
+          video: appParams.file_upload.video || {},
+          audio: appParams.file_upload.audio || {},
+        },
         suggestedQuestionsAfterAnswer:
           appParams.suggested_questions_after_answer &&
           appParams.suggested_questions_after_answer.enabled,
@@ -2066,14 +2064,12 @@ class Chatflow {
           appParams.speech_to_text && appParams.speech_to_text.enabled,
         textToSpeech:
           appParams.text_to_speech && appParams.text_to_speech.enabled,
-        fileUpload:
-          appParams.file_upload &&
-          ((appParams.file_upload.image &&
-            appParams.file_upload.image.enabled) ||
-            (appParams.file_upload.document &&
-              appParams.file_upload.document.enabled) ||
-            (appParams.file_upload.audio &&
-              appParams.file_upload.audio.enabled)),
+        fileUpload: {
+          image: appParams.file_upload.image || {},
+          document: appParams.file_upload.document || {},
+          video: appParams.file_upload.video || {},
+          audio: appParams.file_upload.audio || {},
+        },
         suggestedQuestionsAfterAnswer:
           appParams.suggested_questions_after_answer &&
           appParams.suggested_questions_after_answer.enabled,
