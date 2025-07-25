@@ -91,26 +91,6 @@ Google Apps Script（GAS）から Dify API を簡単に呼び出すためのラ�
 
 コードレビューの依頼がされた場合、必ず日本語でレビューすること
 
-## 開発環境・ツール
-
-**DAS (Dify Application Script)**
-
-- Google Apps Script ライブラリプロジェクト
-- 作業ディレクトリ: `/workspace`
-- プロジェクト概要：
-  1. Google Apps Script（GAS）から Dify API を簡単に呼び出すためのライブラリ
-  2. Chatbot、Chatflow、Workflow、TextGenerator の各機能に対応
-  3. 統一されたインターフェースで Dify サービスへアクセス可能
-
-### 技術スタック
-
-- **実行環境**: Google Apps Script（V8 ランタイム）
-- **言語**: JavaScript（ES6 互換）
-- **HTTP 通信**: UrlFetchApp（GAS 標準ライブラリ）
-- **認証**: Bearer Token（Dify API Key）
-- **開発ツール**: clasp（Google Apps Script CLI）
-- **対象 API**: Dify API v1
-
 ### 開発コマンド
 
 ```bash
@@ -118,23 +98,4 @@ clasp push    # Google Cloudに反映
 clasp pull    # Cloudから取得
 clasp open    # Apps Scriptエディタで開く
 clasp create [scriptTitle] # 新しい Apps Script プロジェクトを作成する
-```
-
-### プロジェクト構造
-
-```
-/workspace/
-├── main.js              # メインライブラリファイル
-├── appsscript.json      # GASプロジェクト設定
-├── 要件定義書.md        # プロジェクト要件定義
-├── 作業計画書.md        # 開発作業計画
-├── README.md            # プロジェクト説明
-├── CLAUDE.md            # Claude設定ファイル
-├── dify-api/            # APIリファレンス
-│   ├── chatbot/         # チャットボットAPI仕様
-│   ├── チャットフロー/  # チャットフローAPI仕様
-│   ├── ワークフロー/    # ワークフローAPI仕様
-│   └── テキストジェネレーター/ # テキスト生成API仕様
-├── tests/               # テストファイル（予定）
-└── examples/            # 使用例（予定）
 ```
