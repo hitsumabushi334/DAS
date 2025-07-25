@@ -18,9 +18,9 @@
  * @property {Array<number>} _rateLimitRequests - レート制限用リクエスト履歴
  * @property {number} _rateLimitWindow - レート制限ウィンドウ (ミリ秒)
  * @property {number} _rateLimitMax - レート制限最大リクエスト数
- * @property {Object} fileUploadConfig - ファイルアップロード設定 (初期化時に取得)
+ * @property {Object} fileUpload - ファイルアップロード設定 (初期化時に取得)
  * @property {Object} systemParameters - システムパラメータ (初期化時に取得)
- * @property {Array} userInputForm - ユーザー入力フォーム設定 (初期化時に取得)
+ * @property {Object} userInput - ユーザー入力フォーム設定 (初期化時に取得)
  */
 class Workflow {
   constructor(options) {
