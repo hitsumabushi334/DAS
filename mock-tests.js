@@ -44,8 +44,10 @@ const TEST_CONSTANTS = {
 if (typeof Chatbot === "undefined") {
   // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   class Chatbot {
-    constructor(apiKey, baseUrl) {
+    constructor(options) {
+      const { apiKey, user, baseUrl } = options;
       this.apiKey = apiKey;
+      this.user = user;
       this.baseUrl = baseUrl || "https://api.dify.ai/v1";
 
       // キャッシュとレート制限プロパティの初期化
@@ -392,8 +394,8 @@ class MockTestFramework {
  * モックChatbotクラス（テスト用）
  */
 class MockChatbot extends Chatbot {
-  constructor(apiKey, baseUrl, testFramework) {
-    super(apiKey, baseUrl);
+  constructor(options, testFramework) {
+    super(options);
     this.testFramework = testFramework;
     this.mockResponses = {};
     this.requestCount = 0;
@@ -492,22 +494,32 @@ class ComprehensiveMockTestSuite {
 
     // 1. コンストラクタテスト - 正常ケース
     this.framework.test("コンストラクタ - 正常ケース", () => {
-      const chatbot = new Chatbot({ apiKey: "test-api-key", user: "test-user", baseUrl: "https://api.dify.ai/v1" });
+      const chatbot = new Chatbot({
+        apiKey: "test-api-key",
+        user: "test-user",
+        baseUrl: "https://api.dify.ai/v1",
+      });
       this.framework.assertEqual(chatbot.apiKey, "test-api-key");
       this.framework.assertEqual(chatbot.baseUrl, "https://api.dify.ai/v1");
     });
 
     // 2. コンストラクタテスト - デフォルトURL
     this.framework.test("コンストラクタ - デフォルトURL", () => {
-      const chatbot = new Chatbot({ apiKey: "test-api-key", user: "test-user" });
+      const chatbot = new Chatbot({
+        apiKey: "test-api-key",
+        user: "test-user",
+      });
       this.framework.assertEqual(chatbot.baseUrl, "https://api.dify.ai/v1");
     });
 
     // 3. sendMessage - 基本的な正常ケース
     this.framework.test("sendMessage - 基本的な正常ケース", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const result = chatbot.sendMessage("こんにちは", "user123");
@@ -525,8 +537,11 @@ class ComprehensiveMockTestSuite {
     // 4. sendMessage - オプション付き
     this.framework.test("sendMessage - オプション付き", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const options = {
@@ -545,8 +560,11 @@ class ComprehensiveMockTestSuite {
     // 5. getConversations - 基本ケース
     this.framework.test("getConversations - 基本ケース", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       chatbot.setMockResponse(
@@ -570,8 +588,11 @@ class ComprehensiveMockTestSuite {
     // 6. getConversationMessages - 基本ケース
     this.framework.test("getConversationMessages - 基本ケース", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       chatbot.setMockResponse(
@@ -593,8 +614,11 @@ class ComprehensiveMockTestSuite {
     // 7. 空文字列テスト
     this.framework.test("sendMessage - query空文字列", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       this.framework.assertThrows(() => {
@@ -605,8 +629,11 @@ class ComprehensiveMockTestSuite {
     // 8. nullパラメータテスト
     this.framework.test("sendMessage - nullパラメータ", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       this.framework.assertThrows(() => {
@@ -617,8 +644,11 @@ class ComprehensiveMockTestSuite {
     // 9. 非常に長いメッセージ
     this.framework.test("sendMessage - 超長文メッセージ", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const longMessage = "あ".repeat(TEST_CONSTANTS.LONG_MESSAGE_LENGTH);
@@ -629,8 +659,11 @@ class ComprehensiveMockTestSuite {
     // 10. limitパラメータ境界値
     this.framework.test("getConversations - limit最大値", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       chatbot.setMockResponse(
@@ -647,8 +680,11 @@ class ComprehensiveMockTestSuite {
     // 11. limit過大値
     this.framework.test("getConversations - limit過大値", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       chatbot.setMockResponse(
@@ -665,8 +701,11 @@ class ComprehensiveMockTestSuite {
     // 12. 特殊文字を含むパラメータ
     this.framework.test("sendMessage - 特殊文字含みquery", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const specialMessage = "こんにちは！@#$%^&*()_+-=[]{}|;:,.<>?";
@@ -702,8 +741,11 @@ class ComprehensiveMockTestSuite {
     // 14. サーバーエラー
     this.framework.test("内部サーバーエラー", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       chatbot.setMockResponse(
@@ -720,8 +762,11 @@ class ComprehensiveMockTestSuite {
     // 15. 無効なrating値
     this.framework.test("sendFeedback - 無効なrating", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       this.framework.assertThrows(() => {
@@ -732,8 +777,11 @@ class ComprehensiveMockTestSuite {
     // 16. 会話ID未指定
     this.framework.test("getConversationMessages - 会話ID未指定", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       this.framework.assertThrows(() => {
@@ -744,8 +792,11 @@ class ComprehensiveMockTestSuite {
     // 17. ファイルアップロード - ファイル未指定
     this.framework.test("uploadFile - ファイル未指定", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       this.framework.assertThrows(() => {
@@ -756,8 +807,11 @@ class ComprehensiveMockTestSuite {
     // 18. textToAudio - パラメータ不足
     this.framework.test("textToAudio - パラメータ不足", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       this.framework.assertThrows(() => {
@@ -775,8 +829,11 @@ class ComprehensiveMockTestSuite {
     // 19. レート制限正常動作
     this.framework.test("レート制限 - 正常動作", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       // 複数回リクエストを送信してもエラーにならないことを確認
@@ -791,7 +848,7 @@ class ComprehensiveMockTestSuite {
 
     // 20. レート制限超過シミュレーション
     this.framework.test("レート制限 - 超過シミュレーション", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
       // レート制限配列を手動で満タンにする
       const now = Date.now();
       chatbot._rateLimitRequests = new Array(
@@ -805,7 +862,7 @@ class ComprehensiveMockTestSuite {
 
     // 21. 時間経過によるレート制限リセット
     this.framework.test("レート制限 - 時間経過リセット", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
       // 古いタイムスタンプでリクエスト配列を埋める
       const oldTime = Date.now() - TEST_CONSTANTS.RATE_LIMIT_WINDOW;
       chatbot._rateLimitRequests = new Array(
@@ -830,8 +887,11 @@ class ComprehensiveMockTestSuite {
     // 22. GETリクエストキャッシュ
     this.framework.test("GETリクエスト - キャッシュ機能", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const url = "/conversations?user=user123&limit=20&sort_by=-updated_at";
@@ -859,7 +919,7 @@ class ComprehensiveMockTestSuite {
 
     // 23. キャッシュ有効期限テスト
     this.framework.test("キャッシュ - 有効期限テスト", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
       const testUrl = "https://api.test.com/test";
 
       // キャッシュに古いデータを手動設定
@@ -907,8 +967,11 @@ class ComprehensiveMockTestSuite {
     // 24. POST/PUT/DELETEはキャッシュ非対象
     this.framework.test("POST/PUT/DELETE - キャッシュ非対象", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -935,7 +998,7 @@ class ComprehensiveMockTestSuite {
 
     // 25. ストリーミングモード指定
     this.framework.test("sendMessage - ストリーミングモード", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       // _parseStreamingResponseメソッドの動作確認
       const mockResponse = {
@@ -950,7 +1013,7 @@ class ComprehensiveMockTestSuite {
 
     // 26. ストリーミング - 不正なJSONハンドリング
     this.framework.test("ストリーミング - 不正なJSONハンドリング", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       const mockResponseWithInvalidJson = {
         getResponseCode: () => 200,
@@ -966,7 +1029,7 @@ class ComprehensiveMockTestSuite {
 
     // 27. ストリーミング - エラーイベント
     this.framework.test("ストリーミング - エラーイベント", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       const mockErrorResponse = {
         getResponseCode: () => 200,
@@ -981,7 +1044,7 @@ class ComprehensiveMockTestSuite {
 
     // 28. ストリーミング - [DONE]シグナル
     this.framework.test("ストリーミング - [DONE]シグナル処理", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       const mockDoneResponse = {
         getResponseCode: () => 200,
@@ -1003,8 +1066,11 @@ class ComprehensiveMockTestSuite {
     // 29. ファイルアップロード - サイズ制限チェック
     this.framework.test("uploadFile - サイズ制限チェック", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1021,8 +1087,11 @@ class ComprehensiveMockTestSuite {
     // 30. ファイルアップロード - 正常ケース
     this.framework.test("uploadFile - 正常ケース", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1050,8 +1119,11 @@ class ComprehensiveMockTestSuite {
     // 31. 音声ファイル変換 - テキストから音声
     this.framework.test("textToAudio - message_idパラメータ", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1067,8 +1139,11 @@ class ComprehensiveMockTestSuite {
     // 32. 音声ファイル変換 - textパラメータ
     this.framework.test("textToAudio - textパラメータ", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1089,27 +1164,34 @@ class ComprehensiveMockTestSuite {
 
     // 33. APIキー未設定
     this.framework.test("APIキー未設定", () => {
-      const chatbot = new Chatbot("");
+      const chatbot = new Chatbot({ apiKey: "", user: "test-user" });
       this.framework.assertEqual(chatbot.apiKey, "");
     });
 
     // 34. APIキー空文字列
     this.framework.test("APIキー空文字列", () => {
-      const chatbot = new Chatbot(null);
+      const chatbot = new Chatbot({ apiKey: null, user: "test-user" });
       this.framework.assertEqual(chatbot.apiKey, null);
     });
 
     // 35. 不正なベースURL
     this.framework.test("不正なベースURL", () => {
-      const chatbot = new Chatbot("test-key", "invalid-url");
+      const chatbot = new Chatbot({
+        apiKey: "test-key",
+        user: "test-user",
+        baseUrl: "invalid-url",
+      });
       this.framework.assertEqual(chatbot.baseUrl, "invalid-url");
     });
 
     // 36. SQLインジェクション対策（入力サニタイゼーション）
     this.framework.test("SQLインジェクション対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const maliciousInput = "'; DROP TABLE users; --";
@@ -1122,8 +1204,11 @@ class ComprehensiveMockTestSuite {
     // 37. XSS対策（特殊文字エスケープ）
     this.framework.test("XSS対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const xssInput = "<script>alert('XSS')</script>";
@@ -1135,8 +1220,11 @@ class ComprehensiveMockTestSuite {
     // 38. パラメータ汚染攻撃テスト
     this.framework.test("パラメータ汚染攻撃テスト", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1162,8 +1250,11 @@ class ComprehensiveMockTestSuite {
     // 39. LDAP インジェクション対策
     this.framework.test("LDAP インジェクション対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1175,8 +1266,11 @@ class ComprehensiveMockTestSuite {
     // 40. NoSQL インジェクション対策
     this.framework.test("NoSQL インジェクション対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1188,8 +1282,11 @@ class ComprehensiveMockTestSuite {
     // 41. ヘッダーインジェクション対策
     this.framework.test("ヘッダーインジェクション対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1202,8 +1299,11 @@ class ComprehensiveMockTestSuite {
     // 42. パストラバーサル攻撃対策
     this.framework.test("パストラバーサル攻撃対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1215,8 +1315,11 @@ class ComprehensiveMockTestSuite {
     // 43. コマンドインジェクション対策
     this.framework.test("コマンドインジェクション対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1228,8 +1331,11 @@ class ComprehensiveMockTestSuite {
     // 44. レスポンス分割攻撃対策
     this.framework.test("レスポンス分割攻撃対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1242,8 +1348,11 @@ class ComprehensiveMockTestSuite {
     // 45. 大容量ペイロード攻撃対策
     this.framework.test("大容量ペイロード攻撃対策", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1269,8 +1378,11 @@ class ComprehensiveMockTestSuite {
     // 38. 大量データ処理
     this.framework.test("大量データ処理", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1289,8 +1401,11 @@ class ComprehensiveMockTestSuite {
     // 39. 同時リクエスト処理
     this.framework.test("同時リクエスト処理", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1311,7 +1426,7 @@ class ComprehensiveMockTestSuite {
 
     // 40. メモリ使用量テスト（キャッシュサイズ）
     this.framework.test("メモリ使用量 - キャッシュサイズ", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       // キャッシュに大量のデータを追加
       for (let i = 0; i < TEST_CONSTANTS.CACHE_STRESS_COUNT; i++) {
@@ -1338,8 +1453,11 @@ class ComprehensiveMockTestSuite {
     // 41. Unicode文字対応
     this.framework.test("Unicode文字対応", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const unicodeMessage = "こんにちは世界 🌍 тест مرحبا 🚀";
@@ -1351,8 +1469,11 @@ class ComprehensiveMockTestSuite {
     // 42. エモジ対応
     this.framework.test("エモジ対応", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const emojiMessage = "今日はとても良い天気です！ ☀️🌈🦋🌸";
@@ -1364,8 +1485,11 @@ class ComprehensiveMockTestSuite {
     // 43. 改行文字処理
     this.framework.test("改行文字処理", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
       const multilineMessage = "1行目\n2行目\r\n3行目\r4行目";
@@ -1376,7 +1500,7 @@ class ComprehensiveMockTestSuite {
 
     // 44. クエリ文字列エスケープテスト
     this.framework.test("_buildQueryString - エスケープ処理", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
       const params = {
         normal: "value",
         special: "value with spaces & symbols",
@@ -1398,8 +1522,11 @@ class ComprehensiveMockTestSuite {
     // 45. 空配列・空オブジェクト処理
     this.framework.test("空配列・空オブジェクト処理", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1413,7 +1540,7 @@ class ComprehensiveMockTestSuite {
 
     // 46. タイムゾーン処理
     this.framework.test("タイムゾーン処理", () => {
-      const chatbot = new Chatbot("test-key");
+      const chatbot = new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       // 現在時刻の処理が正常に行われることを確認
       Date.now();
@@ -1428,8 +1555,11 @@ class ComprehensiveMockTestSuite {
     // 47. 循環参照オブジェクト処理
     this.framework.test("循環参照オブジェクト処理", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1453,8 +1583,11 @@ class ComprehensiveMockTestSuite {
     // 48. 非同期処理との組み合わせ
     this.framework.test("非同期処理との組み合わせ", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
@@ -1489,7 +1622,7 @@ class ComprehensiveMockTestSuite {
 
     // 49. ガベージコレクション対応
     this.framework.test("ガベージコレクション対応", () => {
-      new Chatbot("test-key");
+      new Chatbot({ apiKey: "test-key", user: "test-user" });
 
       // 大量のオブジェクトを作成・破棄
       for (let i = 0; i < TEST_CONSTANTS.MEMORY_TEST_COUNT; i++) {
@@ -1503,8 +1636,11 @@ class ComprehensiveMockTestSuite {
     // 50. エラーメッセージのローカライゼーション
     this.framework.test("エラーメッセージのローカライゼーション", () => {
       const chatbot = new MockChatbot(
-        "test-key",
-        "https://api.test.com",
+        {
+          apiKey: "test-key",
+          user: "test-user",
+          baseUrl: "https://api.test.com",
+        },
         this.framework,
       );
 
