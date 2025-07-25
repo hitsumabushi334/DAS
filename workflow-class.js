@@ -262,7 +262,7 @@ class Workflow {
     return this._makeRequest(
       "/workflows/tasks/" + taskId + "/stop",
       "POST",
-      payload
+      payload,
     );
   }
 
@@ -352,11 +352,16 @@ class Workflow {
       const appParams = this.getAppParameters();
 
       // 各機能の有効状態をプロパティに保存
-      this.fileUpload = {
-        image: appParams.file_upload.image || {},
-        document: appParams.file_upload.document || {},
-        video: appParams.file_upload.video || {},
-        audio: appParams.file_upload.audio || {},
+      this.features = {
+        speechToText: false,
+        textToSpeech: false,
+        fileUpload: {
+          image: appParams.file_upload.image || {},
+          document: appParams.file_upload.document || {},
+          video: appParams.file_upload.video || {},
+          audio: appParams.file_upload.audio || {},
+        },
+        suggestedQuestionsAfterAnswer: false,
       };
       // ユーザー入力フォームの構成の設定も保存
       this.userInput = {
@@ -375,10 +380,17 @@ class Workflow {
       };
       // システムパラメータも保存
       this.systemParameters = appParams.system_parameters || {};
+
+      // 推奨質問も保存
+      this.suggestedQuestions = appParams.suggested_questions || [];
+
+      // オープニングステートメントも保存
+      this.openingStatement = appParams.opening_statement || "";
     } catch (error) {
       // 初期化時のエラーは警告として記録し、デフォルト値を設定
       Logger.log(
-        "アプリケーション機能の初期化中にエラーが発生しました: " + error.message
+        "アプリケーション機能の初期化中にエラーが発生しました: " +
+          error.message,
       );
       this.features = {
         speechToText: false,
@@ -427,7 +439,7 @@ class Workflow {
       throw new Error(
         `ファイルサイズが制限を超えています。最大サイズ: ${
           MAX_FILE_SIZE / (1024 * 1024)
-        }MB`
+        }MB`,
       );
     }
 
@@ -467,7 +479,7 @@ class Workflow {
       throw new Error(
         `ファイルアップロードエラー (HTTP ${response.getResponseCode()}): ${
           errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
+        }`,
       );
     }
 
@@ -551,7 +563,7 @@ class Workflow {
                 Logger.log(
                   `node_started event received - Node: ${
                     json.data?.title || json.data?.node_id
-                  } (${json.data?.node_type})`
+                  } (${json.data?.node_type})`,
                 );
                 break;
 
@@ -559,7 +571,7 @@ class Workflow {
                 Logger.log(
                   `node_finished event received - Node: ${
                     json.data?.title || json.data?.node_id
-                  } (${json.data?.status})`
+                  } (${json.data?.status})`,
                 );
                 break;
 
@@ -590,7 +602,7 @@ class Workflow {
             }
           } catch (parseError) {
             Logger.log(
-              `JSON解析エラー: ${parseError.message}, データ: ${dataStr}`
+              `JSON解析エラー: ${parseError.message}, データ: ${dataStr}`,
             );
             // 解析エラーは無視して続行
           }
@@ -619,7 +631,7 @@ class Workflow {
       throw new Error(
         `ワークフローAPI エラー (HTTP ${responseCode}): ${
           errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
+        }`,
       );
     }
   }
@@ -682,7 +694,7 @@ class Workflow {
           responseText
         ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
         throw new Error(
-          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`
+          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`,
         );
       }
 
@@ -715,7 +727,7 @@ class Workflow {
 
     // 古いリクエストを削除
     this._rateLimitRequests = this._rateLimitRequests.filter(
-      (timestamp) => now - timestamp < this._rateLimitWindow
+      (timestamp) => now - timestamp < this._rateLimitWindow,
     );
 
     // リクエスト数が上限に達している場合、エラーを投げる
@@ -723,7 +735,7 @@ class Workflow {
       throw new Error(
         `レート制限に達しました。${this._rateLimitWindow / 1000}秒間に${
           this._rateLimitMax
-        }リクエストを超えています`
+        }リクエストを超えています`,
       );
     }
 
@@ -740,7 +752,8 @@ class Workflow {
   _buildQueryString(params) {
     return Object.keys(params)
       .map(
-        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
+        (key) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
       )
       .join("&");
   }
