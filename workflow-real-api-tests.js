@@ -15,7 +15,9 @@ const WORKFLOW_REAL_API_TEST_CONFIG = {
   API_KEY: PropertiesService.getScriptProperties().getProperty("DIFY_API_KEY"), // 実際のAPIキーに変更してください
   BASE_URL: "https://api.dify.ai/v1", // 実際のDifyインスタンスURLに変更してください
   TEST_USER: "test-user-workflow-api-real", // テスト用ユーザーID
-  WORKFLOW_APP_ID: PropertiesService.getScriptProperties().getProperty("DIFY_WORKFLOW_APP_ID"), // ワークフローアプリID
+  WORKFLOW_APP_ID: PropertiesService.getScriptProperties().getProperty(
+    "DIFY_WORKFLOW_APP_ID",
+  ), // ワークフローアプリID
   ENABLE_FILE_TESTS: true, // ファイルテストを有効にする場合はtrueに設定
   ENABLE_DESTRUCTIVE_TESTS: false, // 停止系テストを有効にする場合はtrueに設定
   TEST_TIMEOUT: 60000, // テストタイムアウト（ミリ秒）- ワークフローは処理時間が長い場合がある
@@ -36,7 +38,7 @@ class WorkflowRealApiTestFramework {
   assertEqual(actual, expected, message) {
     if (actual !== expected) {
       throw new Error(
-        `アサーション失敗: ${message}. 期待値: ${expected}, 実際の値: ${actual}`
+        `アサーション失敗: ${message}. 期待値: ${expected}, 実際の値: ${actual}`,
       );
     }
   }
@@ -50,7 +52,7 @@ class WorkflowRealApiTestFramework {
   assertNotNull(value, message) {
     if (value === null || value === undefined) {
       throw new Error(
-        `アサーション失敗: ${message}. 値がnullまたはundefinedです`
+        `アサーション失敗: ${message}. 値がnullまたはundefinedです`,
       );
     }
   }
@@ -58,7 +60,7 @@ class WorkflowRealApiTestFramework {
   assertHasProperty(obj, property, message) {
     if (!obj || !obj.hasOwnProperty(property)) {
       throw new Error(
-        `アサーション失敗: ${message}. プロパティ '${property}' が存在しません`
+        `アサーション失敗: ${message}. プロパティ '${property}' が存在しません`,
       );
     }
   }
@@ -72,7 +74,7 @@ class WorkflowRealApiTestFramework {
   assertIsObject(value, message) {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       throw new Error(
-        `アサーション失敗: ${message}. 値がオブジェクトではありません`
+        `アサーション失敗: ${message}. 値がオブジェクトではありません`,
       );
     }
   }
@@ -141,7 +143,7 @@ class WorkflowRealApiTestFramework {
   generateReport() {
     const totalTests = this.testResults.length;
     const successfulTests = this.testResults.filter(
-      (result) => result.status === "SUCCESS"
+      (result) => result.status === "SUCCESS",
     ).length;
     const failedTests = totalTests - successfulTests;
 
@@ -150,7 +152,7 @@ class WorkflowRealApiTestFramework {
     console.log(`成功: ${successfulTests}`);
     console.log(`失敗: ${failedTests}`);
     console.log(
-      `成功率: ${totalTests > 0 ? ((successfulTests / totalTests) * 100).toFixed(2) : 0}%`
+      `成功率: ${totalTests > 0 ? ((successfulTests / totalTests) * 100).toFixed(2) : 0}%`,
     );
 
     if (failedTests > 0) {
@@ -189,7 +191,7 @@ class WorkflowRealApiTestSuite {
   setUp() {
     if (!WORKFLOW_REAL_API_TEST_CONFIG.API_KEY) {
       throw new Error(
-        "API_KEYが設定されていません。WORKFLOW_REAL_API_TEST_CONFIG.API_KEYを設定してください。"
+        "API_KEYが設定されていません。WORKFLOW_REAL_API_TEST_CONFIG.API_KEYを設定してください。",
       );
     }
 
@@ -235,7 +237,6 @@ class WorkflowRealApiTestSuite {
       if (WORKFLOW_REAL_API_TEST_CONFIG.ENABLE_DESTRUCTIVE_TESTS) {
         this.testWorkflowTaskStop();
       }
-
     } catch (error) {
       Logger.log(`テストスイートの実行エラー: ${error.message}`);
     }
@@ -251,36 +252,56 @@ class WorkflowRealApiTestSuite {
 
     // 1. Workflowインスタンス作成テスト
     this.framework.runTest("Workflowインスタンス作成", () => {
-      this.framework.assertNotNull(this.workflow, "Workflowインスタンスが作成されている");
+      this.framework.assertNotNull(
+        this.workflow,
+        "Workflowインスタンスが作成されている",
+      );
       this.framework.assertEqual(
         this.workflow.apiKey,
         WORKFLOW_REAL_API_TEST_CONFIG.API_KEY,
-        "APIキーが正しく設定されている"
+        "APIキーが正しく設定されている",
       );
       this.framework.assertEqual(
         this.workflow.baseUrl,
         WORKFLOW_REAL_API_TEST_CONFIG.BASE_URL,
-        "ベースURLが正しく設定されている"
+        "ベースURLが正しく設定されている",
       );
       this.framework.assertEqual(
         this.workflow.user,
         WORKFLOW_REAL_API_TEST_CONFIG.TEST_USER,
-        "ユーザーが正しく設定されている"
+        "ユーザーが正しく設定されている",
       );
-      
+
       // 初期化時に設定されるプロパティの存在確認
-      this.framework.assertHasProperty(this.workflow, "features", "featuresプロパティが存在する");
-      this.framework.assertHasProperty(this.workflow, "userInput", "userInputプロパティが存在する");
-      this.framework.assertHasProperty(this.workflow, "systemParameters", "systemParametersプロパティが存在する");
-      this.framework.assertHasProperty(this.workflow, "suggestedQuestions", "suggestedQuestionsプロパティが存在する");
-      this.framework.assertHasProperty(this.workflow, "openingStatement", "openingStatementプロパティが存在する");
-      
+      this.framework.assertHasProperty(
+        this.workflow,
+        "fileUpload",
+        "fileUploadプロパティが存在する",
+      );
+      this.framework.assertHasProperty(
+        this.workflow,
+        "userInput",
+        "userInputプロパティが存在する",
+      );
+      this.framework.assertHasProperty(
+        this.workflow,
+        "systemParameters",
+        "systemParametersプロパティが存在する",
+      );
+
       // 各プロパティの型確認
-      this.framework.assertIsObject(this.workflow.features, "featuresがオブジェクトである");
-      this.framework.assertIsObject(this.workflow.userInput, "userInputがオブジェクトである");
-      this.framework.assertIsObject(this.workflow.systemParameters, "systemParametersがオブジェクトである");
-      this.framework.assertIsArray(this.workflow.suggestedQuestions, "suggestedQuestionsが配列である");
-      this.framework.assertIsString(this.workflow.openingStatement, "openingStatementが文字列である");
+      this.framework.assertIsObject(
+        this.workflow.fileUpload,
+        "fileUploadがオブジェクトである",
+      );
+      this.framework.assertIsObject(
+        this.workflow.userInput,
+        "userInputがオブジェクトである",
+      );
+      this.framework.assertIsObject(
+        this.workflow.systemParameters,
+        "systemParametersがオブジェクトである",
+      );
     });
 
     // 2. 必須パラメータ検証テスト
@@ -291,7 +312,7 @@ class WorkflowRealApiTestSuite {
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("inputsは必須パラメータです"),
-          "適切なエラーメッセージが表示される"
+          "適切なエラーメッセージが表示される",
         );
       }
     });
@@ -304,7 +325,7 @@ class WorkflowRealApiTestSuite {
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("workflowRunIdは必須パラメータです"),
-          "適切なエラーメッセージが表示される"
+          "適切なエラーメッセージが表示される",
         );
       }
     });
@@ -317,11 +338,11 @@ class WorkflowRealApiTestSuite {
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("taskIdは必須パラメータです"),
-          "適切なエラーメッセージが表示される"
+          "適切なエラーメッセージが表示される",
         );
       }
     });
-    
+
     // 5. 初期化エラーハンドリングテスト
     this.framework.runTest("初期化エラーハンドリング", () => {
       try {
@@ -329,20 +350,41 @@ class WorkflowRealApiTestSuite {
         const invalidWorkflow = new Workflow({
           apiKey: "invalid-key",
           baseUrl: "https://invalid-url.example.com/v1",
-          user: "test-user"
+          user: "test-user",
         });
-        
+
         // デフォルト値が設定されていることを確認
-        this.framework.assertNotNull(invalidWorkflow.features, "featuresにデフォルト値が設定されている");
-        this.framework.assertNotNull(invalidWorkflow.systemParameters, "systemParametersにデフォルト値が設定されている");
-        this.framework.assertNotNull(invalidWorkflow.userInput, "userInputにデフォルト値が設定されている");
-        
+        this.framework.assertNotNull(
+          invalidWorkflow.fileUpload,
+          "fileUploadにデフォルト値が設定されている",
+        );
+        this.framework.assertNotNull(
+          invalidWorkflow.systemParameters,
+          "systemParametersにデフォルト値が設定されている",
+        );
+        this.framework.assertNotNull(
+          invalidWorkflow.userInput,
+          "userInputにデフォルト値が設定されている",
+        );
+
         // デフォルト値の内容確認
-        this.framework.assertEqual(invalidWorkflow.features.speechToText, false, "speechToTextのデフォルト値");
-        this.framework.assertEqual(invalidWorkflow.features.textToSpeech, false, "textToSpeechのデフォルト値");
-        this.framework.assertEqual(invalidWorkflow.features.fileUpload, false, "fileUploadのデフォルト値");
-        this.framework.assertEqual(invalidWorkflow.features.suggestedQuestionsAfterAnswer, false, "suggestedQuestionsAfterAnswerのデフォルト値");
-        
+        this.framework.assertIsObject(
+          invalidWorkflow.fileUpload.image,
+          "fileUpload.imageのデフォルト値がオブジェクト",
+        );
+        this.framework.assertIsObject(
+          invalidWorkflow.fileUpload.document,
+          "fileUpload.documentのデフォルト値がオブジェクト",
+        );
+        this.framework.assertIsObject(
+          invalidWorkflow.fileUpload.video,
+          "fileUpload.videoのデフォルト値がオブジェクト",
+        );
+        this.framework.assertIsObject(
+          invalidWorkflow.fileUpload.audio,
+          "fileUpload.audioのデフォルト値がオブジェクト",
+        );
+
         Logger.log("初期化エラーハンドリングが正常に動作しています");
       } catch (error) {
         Logger.log(`初期化エラーハンドリングテストエラー: ${error.message}`);
@@ -369,8 +411,16 @@ class WorkflowRealApiTestSuite {
         });
 
         this.framework.assertNotNull(result, "結果が返される");
-        this.framework.assertHasProperty(result, "workflow_run_id", "workflow_run_idが含まれる");
-        this.framework.assertHasProperty(result, "task_id", "task_idが含まれる");
+        this.framework.assertHasProperty(
+          result,
+          "workflow_run_id",
+          "workflow_run_idが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "task_id",
+          "task_idが含まれる",
+        );
 
         // テスト用にIDを保存
         if (result.workflow_run_id) {
@@ -383,10 +433,13 @@ class WorkflowRealApiTestSuite {
         Logger.log(`ワークフロー実行結果: ${JSON.stringify(result)}`);
       } catch (error) {
         // ワークフローが設定されていない場合やAPIエラーの場合
-        Logger.log(`ワークフロー実行エラー（予期されるエラーの可能性）: ${error.message}`);
+        Logger.log(
+          `ワークフロー実行エラー（予期されるエラーの可能性）: ${error.message}`,
+        );
         this.framework.assertTrue(
-          error.message.includes("API エラー") || error.message.includes("app_unavailable"),
-          "APIエラーまたはアプリ利用不可エラー"
+          error.message.includes("API エラー") ||
+            error.message.includes("app_unavailable"),
+          "APIエラーまたはアプリ利用不可エラー",
         );
       }
     });
@@ -403,14 +456,21 @@ class WorkflowRealApiTestSuite {
         });
 
         this.framework.assertNotNull(result, "結果が返される");
-        this.framework.assertHasProperty(result, "workflow_run_id", "workflow_run_idが含まれる");
+        this.framework.assertHasProperty(
+          result,
+          "workflow_run_id",
+          "workflow_run_idが含まれる",
+        );
 
         Logger.log(`ブロッキングモード実行結果: ${JSON.stringify(result)}`);
       } catch (error) {
-        Logger.log(`ブロッキングモード実行エラー（予期されるエラーの可能性）: ${error.message}`);
+        Logger.log(
+          `ブロッキングモード実行エラー（予期されるエラーの可能性）: ${error.message}`,
+        );
         this.framework.assertTrue(
-          error.message.includes("API エラー") || error.message.includes("app_unavailable"),
-          "APIエラーまたはアプリ利用不可エラー"
+          error.message.includes("API エラー") ||
+            error.message.includes("app_unavailable"),
+          "APIエラーまたはアプリ利用不可エラー",
         );
       }
     });
@@ -429,10 +489,12 @@ class WorkflowRealApiTestSuite {
         this.framework.assertNotNull(result, "結果が返される");
         Logger.log(`カスタム入力実行結果: ${JSON.stringify(result)}`);
       } catch (error) {
-        Logger.log(`カスタム入力実行エラー（予期されるエラーの可能性）: ${error.message}`);
+        Logger.log(
+          `カスタム入力実行エラー（予期されるエラーの可能性）: ${error.message}`,
+        );
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
@@ -450,10 +512,26 @@ class WorkflowRealApiTestSuite {
         const result = this.workflow.getWorkflowLogs();
 
         this.framework.assertNotNull(result, "結果が返される");
-        this.framework.assertHasProperty(result, "data", "dataプロパティが含まれる");
-        this.framework.assertHasProperty(result, "page", "pageプロパティが含まれる");
-        this.framework.assertHasProperty(result, "limit", "limitプロパティが含まれる");
-        this.framework.assertHasProperty(result, "has_more", "has_moreプロパティが含まれる");
+        this.framework.assertHasProperty(
+          result,
+          "data",
+          "dataプロパティが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "page",
+          "pageプロパティが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "limit",
+          "limitプロパティが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "has_more",
+          "has_moreプロパティが含まれる",
+        );
         this.framework.assertIsArray(result.data, "dataが配列である");
 
         Logger.log(`ログ取得結果: 取得件数=${result.data.length}`);
@@ -461,7 +539,7 @@ class WorkflowRealApiTestSuite {
         Logger.log(`ログ取得エラー: ${error.message}`);
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
@@ -476,18 +554,19 @@ class WorkflowRealApiTestSuite {
         });
 
         this.framework.assertNotNull(result, "結果が返される");
-        this.framework.assertHasProperty(result, "data", "dataプロパティが含まれる");
-        this.framework.assertTrue(
-          result.limit <= 5,
-          "limit設定が反映される"
+        this.framework.assertHasProperty(
+          result,
+          "data",
+          "dataプロパティが含まれる",
         );
+        this.framework.assertTrue(result.limit <= 5, "limit設定が反映される");
 
         Logger.log(`オプション付きログ取得結果: limit=${result.limit}`);
       } catch (error) {
         Logger.log(`オプション付きログ取得エラー: ${error.message}`);
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
@@ -501,14 +580,18 @@ class WorkflowRealApiTestSuite {
         });
 
         this.framework.assertNotNull(result, "結果が返される");
-        this.framework.assertHasProperty(result, "data", "dataプロパティが含まれる");
+        this.framework.assertHasProperty(
+          result,
+          "data",
+          "dataプロパティが含まれる",
+        );
 
         Logger.log(`キーワード検索結果: 取得件数=${result.data.length}`);
       } catch (error) {
         Logger.log(`キーワード検索エラー: ${error.message}`);
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
@@ -524,20 +607,34 @@ class WorkflowRealApiTestSuite {
     if (this.testWorkflowRunId) {
       this.framework.runTest("getWorkflowRunDetail - 有効なID", () => {
         try {
-          const result = this.workflow.getWorkflowRunDetail(this.testWorkflowRunId);
+          const result = this.workflow.getWorkflowRunDetail(
+            this.testWorkflowRunId,
+          );
 
           this.framework.assertNotNull(result, "結果が返される");
           this.framework.assertHasProperty(result, "id", "idが含まれる");
-          this.framework.assertHasProperty(result, "workflow_id", "workflow_idが含まれる");
-          this.framework.assertHasProperty(result, "status", "statusが含まれる");
-          this.framework.assertEqual(result.id, this.testWorkflowRunId, "IDが一致する");
+          this.framework.assertHasProperty(
+            result,
+            "workflow_id",
+            "workflow_idが含まれる",
+          );
+          this.framework.assertHasProperty(
+            result,
+            "status",
+            "statusが含まれる",
+          );
+          this.framework.assertEqual(
+            result.id,
+            this.testWorkflowRunId,
+            "IDが一致する",
+          );
 
           Logger.log(`詳細取得結果: status=${result.status}`);
         } catch (error) {
           Logger.log(`詳細取得エラー: ${error.message}`);
           this.framework.assertTrue(
             error.message.includes("API エラー"),
-            "APIエラー"
+            "APIエラー",
           );
         }
       });
@@ -548,13 +645,13 @@ class WorkflowRealApiTestSuite {
       try {
         const invalidId = "00000000-0000-0000-0000-000000000000";
         this.workflow.getWorkflowRunDetail(invalidId);
-        
+
         // 404エラーが期待される
         throw new Error("404エラーが発生するはずです");
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("API エラー") && error.message.includes("404"),
-          "404エラーが発生する"
+          "404エラーが発生する",
         );
       }
     });
@@ -573,7 +670,11 @@ class WorkflowRealApiTestSuite {
 
         this.framework.assertNotNull(result, "結果が返される");
         this.framework.assertHasProperty(result, "name", "nameが含まれる");
-        this.framework.assertHasProperty(result, "description", "descriptionが含まれる");
+        this.framework.assertHasProperty(
+          result,
+          "description",
+          "descriptionが含まれる",
+        );
         this.framework.assertHasProperty(result, "tags", "tagsが含まれる");
         this.framework.assertIsString(result.name, "nameが文字列である");
         this.framework.assertIsArray(result.tags, "tagsが配列である");
@@ -583,7 +684,7 @@ class WorkflowRealApiTestSuite {
         Logger.log(`アプリ基本情報取得エラー: ${error.message}`);
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
@@ -594,48 +695,78 @@ class WorkflowRealApiTestSuite {
         const result = this.workflow.getAppParameters();
 
         this.framework.assertNotNull(result, "結果が返される");
-        this.framework.assertHasProperty(result, "user_input_form", "user_input_formが含まれる");
-        this.framework.assertHasProperty(result, "file_upload", "file_uploadが含まれる");
-        this.framework.assertHasProperty(result, "system_parameters", "system_parametersが含まれる");
-        this.framework.assertIsArray(result.user_input_form, "user_input_formが配列である");
-        this.framework.assertIsObject(result.file_upload, "file_uploadがオブジェクトである");
-        this.framework.assertIsObject(result.system_parameters, "system_parametersがオブジェクトである");
+        this.framework.assertHasProperty(
+          result,
+          "user_input_form",
+          "user_input_formが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "file_upload",
+          "file_uploadが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "system_parameters",
+          "system_parametersが含まれる",
+        );
+        this.framework.assertIsArray(
+          result.user_input_form,
+          "user_input_formが配列である",
+        );
+        this.framework.assertIsObject(
+          result.file_upload,
+          "file_uploadがオブジェクトである",
+        );
+        this.framework.assertIsObject(
+          result.system_parameters,
+          "system_parametersがオブジェクトである",
+        );
 
         // システムパラメータの詳細チェック
         const sysParams = result.system_parameters;
-        this.framework.assertHasProperty(sysParams, "file_size_limit", "file_size_limitが含まれる");
-        this.framework.assertHasProperty(sysParams, "image_file_size_limit", "image_file_size_limitが含まれる");
+        this.framework.assertHasProperty(
+          sysParams,
+          "file_size_limit",
+          "file_size_limitが含まれる",
+        );
+        this.framework.assertHasProperty(
+          sysParams,
+          "image_file_size_limit",
+          "image_file_size_limitが含まれる",
+        );
 
-        Logger.log(`パラメータ情報取得成功: ファイルサイズ制限=${sysParams.file_size_limit}MB`);
-        
+        Logger.log(
+          `パラメータ情報取得成功: ファイルサイズ制限=${sysParams.file_size_limit}MB`,
+        );
+
         // 初期化時に設定されたプロパティとの一致確認
         this.framework.assertEqual(
           JSON.stringify(this.workflow.systemParameters),
           JSON.stringify(sysParams),
-          "systemParametersプロパティが正しく初期化されている"
+          "systemParametersプロパティが正しく初期化されている",
         );
-        
+
         // userInputプロパティの検証
         if (result.user_input_form && result.user_input_form.length > 0) {
           this.framework.assertTrue(
             this.workflow.userInput.text_input.length >= 0,
-            "userInput.text_inputが初期化されている"
+            "userInput.text_inputが初期化されている",
           );
           this.framework.assertTrue(
             this.workflow.userInput.paragraph.length >= 0,
-            "userInput.paragraphが初期化されている"
+            "userInput.paragraphが初期化されている",
           );
           this.framework.assertTrue(
             this.workflow.userInput.select.length >= 0,
-            "userInput.selectが初期化されている"
+            "userInput.selectが初期化されている",
           );
         }
-        
       } catch (error) {
         Logger.log(`パラメータ情報取得エラー: ${error.message}`);
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
@@ -647,9 +778,21 @@ class WorkflowRealApiTestSuite {
 
         this.framework.assertNotNull(result, "結果が返される");
         this.framework.assertHasProperty(result, "title", "titleが含まれる");
-        this.framework.assertHasProperty(result, "icon_type", "icon_typeが含まれる");
-        this.framework.assertHasProperty(result, "description", "descriptionが含まれる");
-        this.framework.assertHasProperty(result, "show_workflow_steps", "show_workflow_stepsが含まれる");
+        this.framework.assertHasProperty(
+          result,
+          "icon_type",
+          "icon_typeが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "description",
+          "descriptionが含まれる",
+        );
+        this.framework.assertHasProperty(
+          result,
+          "show_workflow_steps",
+          "show_workflow_stepsが含まれる",
+        );
         this.framework.assertIsString(result.title, "titleが文字列である");
 
         Logger.log(`WebApp設定: ${result.title}`);
@@ -657,49 +800,70 @@ class WorkflowRealApiTestSuite {
         Logger.log(`WebApp設定取得エラー: ${error.message}`);
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラー"
+          "APIエラー",
         );
       }
     });
-    
-    // 4. 初期化時のfeaturesプロパティ詳細検証
-    this.framework.runTest("features - 機能プロパティ詳細検証", () => {
-      try {
-        const features = this.workflow.features;
-        
-        // featuresの基本プロパティ存在確認
-        this.framework.assertHasProperty(features, "speechToText", "speechToTextプロパティが存在する");
-        this.framework.assertHasProperty(features, "textToSpeech", "textToSpeechプロパティが存在する");
-        this.framework.assertHasProperty(features, "fileUpload", "fileUploadプロパティが存在する");
-        this.framework.assertHasProperty(features, "suggestedQuestionsAfterAnswer", "suggestedQuestionsAfterAnswerプロパティが存在する");
-        
-        // 各機能がboolean値であることを確認
-        this.framework.assertTrue(
-          typeof features.speechToText === "boolean",
-          "speechToTextがboolean型である"
-        );
-        this.framework.assertTrue(
-          typeof features.textToSpeech === "boolean",
-          "textToSpeechがboolean型である"
-        );
-        this.framework.assertTrue(
-          typeof features.fileUpload === "boolean",
-          "fileUploadがboolean型である"
-        );
-        this.framework.assertTrue(
-          typeof features.suggestedQuestionsAfterAnswer === "boolean",
-          "suggestedQuestionsAfterAnswerがboolean型である"
-        );
-        
-        Logger.log(`機能設定: fileUpload=${features.fileUpload}, speechToText=${features.speechToText}`);
-      } catch (error) {
-        Logger.log(`機能プロパティ検証エラー: ${error.message}`);
-        this.framework.assertTrue(
-          error.message.includes("API エラー"),
-          "APIエラー"
-        );
-      }
-    });
+
+    // 4. 初期化時のfileUploadプロパティ詳細検証
+    this.framework.runTest(
+      "fileUpload - ファイルアップロード設定詳細検証",
+      () => {
+        try {
+          const fileUpload = this.workflow.fileUpload;
+
+          // fileUploadの基本プロパティ存在確認
+          this.framework.assertHasProperty(
+            fileUpload,
+            "image",
+            "imageプロパティが存在する",
+          );
+          this.framework.assertHasProperty(
+            fileUpload,
+            "document",
+            "documentプロパティが存在する",
+          );
+          this.framework.assertHasProperty(
+            fileUpload,
+            "video",
+            "videoプロパティが存在する",
+          );
+          this.framework.assertHasProperty(
+            fileUpload,
+            "audio",
+            "audioプロパティが存在する",
+          );
+
+          // 各設定がオブジェクト値であることを確認
+          this.framework.assertIsObject(
+            fileUpload.image,
+            "imageがオブジェクト型である",
+          );
+          this.framework.assertIsObject(
+            fileUpload.document,
+            "documentがオブジェクト型である",
+          );
+          this.framework.assertIsObject(
+            fileUpload.video,
+            "videoがオブジェクト型である",
+          );
+          this.framework.assertIsObject(
+            fileUpload.audio,
+            "audioがオブジェクト型である",
+          );
+
+          Logger.log(
+            `ファイルアップロード設定確認完了: image=${JSON.stringify(fileUpload.image)}`,
+          );
+        } catch (error) {
+          Logger.log(`ファイルアップロード設定検証エラー: ${error.message}`);
+          this.framework.assertTrue(
+            error.message.includes("API エラー"),
+            "APIエラー",
+          );
+        }
+      },
+    );
   }
 
   /**
@@ -712,8 +876,14 @@ class WorkflowRealApiTestSuite {
     this.framework.runTest("uploadFile - テキストファイル", () => {
       try {
         // テスト用のテキストファイルを作成
-        const testContent = "これはワークフロー用のテストファイルです。\nテスト日時: " + new Date().toISOString();
-        const testBlob = Utilities.newBlob(testContent, "text/plain", "workflow_test.txt");
+        const testContent =
+          "これはワークフロー用のテストファイルです。\nテスト日時: " +
+          new Date().toISOString();
+        const testBlob = Utilities.newBlob(
+          testContent,
+          "text/plain",
+          "workflow_test.txt",
+        );
 
         const result = this.workflow.uploadFile(testBlob);
 
@@ -721,15 +891,26 @@ class WorkflowRealApiTestSuite {
         this.framework.assertHasProperty(result, "id", "idが含まれる");
         this.framework.assertHasProperty(result, "name", "nameが含まれる");
         this.framework.assertHasProperty(result, "size", "sizeが含まれる");
-        this.framework.assertHasProperty(result, "mime_type", "mime_typeが含まれる");
-        this.framework.assertEqual(result.name, "workflow_test.txt", "ファイル名が正しい");
+        this.framework.assertHasProperty(
+          result,
+          "mime_type",
+          "mime_typeが含まれる",
+        );
+        this.framework.assertEqual(
+          result.name,
+          "workflow_test.txt",
+          "ファイル名が正しい",
+        );
 
-        Logger.log(`ファイルアップロード結果: ${result.name} (${result.size} bytes)`);
+        Logger.log(
+          `ファイルアップロード結果: ${result.name} (${result.size} bytes)`,
+        );
       } catch (error) {
         Logger.log(`ファイルアップロードエラー: ${error.message}`);
         this.framework.assertTrue(
-          error.message.includes("API エラー") || error.message.includes("ファイルアップロードエラー"),
-          "アップロードエラー"
+          error.message.includes("API エラー") ||
+            error.message.includes("ファイルアップロードエラー"),
+          "アップロードエラー",
         );
       }
     });
@@ -739,10 +920,17 @@ class WorkflowRealApiTestSuite {
       try {
         // 小さなファイルで正常なケース
         const smallContent = "小さなテストファイル";
-        const smallBlob = Utilities.newBlob(smallContent, "text/plain", "small_test.txt");
+        const smallBlob = Utilities.newBlob(
+          smallContent,
+          "text/plain",
+          "small_test.txt",
+        );
 
         const result = this.workflow.uploadFile(smallBlob);
-        this.framework.assertNotNull(result, "小さなファイルのアップロードが成功");
+        this.framework.assertNotNull(
+          result,
+          "小さなファイルのアップロードが成功",
+        );
 
         Logger.log(`小さなファイルアップロード成功: ${result.name}`);
       } catch (error) {
@@ -758,7 +946,7 @@ class WorkflowRealApiTestSuite {
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("fileは必須パラメータです"),
-          "適切なエラーメッセージが表示される"
+          "適切なエラーメッセージが表示される",
         );
       }
     });
@@ -777,15 +965,21 @@ class WorkflowRealApiTestSuite {
           const result = this.workflow.stopWorkflowTask(this.testTaskId);
 
           this.framework.assertNotNull(result, "結果が返される");
-          this.framework.assertHasProperty(result, "result", "resultが含まれる");
+          this.framework.assertHasProperty(
+            result,
+            "result",
+            "resultが含まれる",
+          );
           this.framework.assertEqual(result.result, "success", "停止成功");
 
           Logger.log(`タスク停止結果: ${result.result}`);
         } catch (error) {
-          Logger.log(`タスク停止エラー（予期されるエラーの可能性）: ${error.message}`);
+          Logger.log(
+            `タスク停止エラー（予期されるエラーの可能性）: ${error.message}`,
+          );
           this.framework.assertTrue(
             error.message.includes("API エラー"),
-            "APIエラー"
+            "APIエラー",
           );
         }
       });
@@ -796,13 +990,13 @@ class WorkflowRealApiTestSuite {
       try {
         const invalidTaskId = "00000000-0000-0000-0000-000000000000";
         this.workflow.stopWorkflowTask(invalidTaskId);
-        
+
         // エラーが期待される
         throw new Error("エラーが発生するはずです");
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("API エラー"),
-          "APIエラーが発生する"
+          "APIエラーが発生する",
         );
       }
     });
