@@ -352,11 +352,16 @@ class Workflow {
       const appParams = this.getAppParameters();
 
       // 各機能の有効状態をプロパティに保存
-      this.fileUpload = {
-        image: appParams.file_upload.image || {},
-        document: appParams.file_upload.document || {},
-        video: appParams.file_upload.video || {},
-        audio: appParams.file_upload.audio || {},
+      this.features = {
+        speechToText: false,
+        textToSpeech: false,
+        fileUpload: {
+          image: appParams.file_upload.image || {},
+          document: appParams.file_upload.document || {},
+          video: appParams.file_upload.video || {},
+          audio: appParams.file_upload.audio || {},
+        },
+        suggestedQuestionsAfterAnswer: false,
       };
       // ユーザー入力フォームの構成の設定も保存
       this.userInput = {
@@ -375,6 +380,12 @@ class Workflow {
       };
       // システムパラメータも保存
       this.systemParameters = appParams.system_parameters || {};
+
+      // 推奨質問も保存
+      this.suggestedQuestions = appParams.suggested_questions || [];
+
+      // オープニングステートメントも保存
+      this.openingStatement = appParams.opening_statement || "";
     } catch (error) {
       // 初期化時のエラーは警告として記録し、デフォルト値を設定
       Logger.log(
