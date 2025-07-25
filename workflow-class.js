@@ -544,6 +544,17 @@ class Workflow {
                   outputs = json.data.outputs || {};
                   error = json.data.error;
                   status = json.data.status || "succeeded";
+                  // json.data.outputsの詳細ログを追加
+                  if (json.data.outputs) {
+                    Logger.log(
+                      "workflow_finished - json.data.outputs structure: " +
+                        JSON.stringify(json.data.outputs, null, 2),
+                    );
+                  } else {
+                    Logger.log(
+                      "workflow_finished - json.data.outputs is null or undefined",
+                    );
+                  }
                 }
                 break;
 
@@ -561,6 +572,17 @@ class Workflow {
                     json.data?.title || json.data?.node_id
                   } (${json.data?.status})`,
                 );
+                // json.data.outputsの詳細ログを追加
+                if (json.data?.outputs) {
+                  Logger.log(
+                    "node_finished - json.data.outputs structure: " +
+                      JSON.stringify(json.data.outputs, null, 2),
+                  );
+                } else {
+                  Logger.log(
+                    "node_finished - json.data.outputs is null or undefined",
+                  );
+                }
                 break;
 
               case "tts_message":
