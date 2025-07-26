@@ -849,16 +849,16 @@ class Chatbot {
           appParams.speech_to_text && appParams.speech_to_text.enabled,
         textToSpeech:
           appParams.text_to_speech && appParams.text_to_speech.enabled,
-        fileUpload: {
-          image: appParams.file_upload.image || {},
-          document: appParams.file_upload.document || {},
-          video: appParams.file_upload.video || {},
-          audio: appParams.file_upload.audio || {},
-        },
         suggestedQuestionsAfterAnswer:
           appParams.suggested_questions_after_answer &&
           appParams.suggested_questions_after_answer.enabled,
       };
+      this.fileUpload = {
+          image: appParams.file_upload.image || {},
+          document: appParams.file_upload.document || {},
+          video: appParams.file_upload.video || {},
+          audio: appParams.file_upload.audio || {},
+        };
       // ユーザー入力フォームの構成の設定も保存
       this.userInput = {
         text_input:
@@ -890,8 +890,13 @@ class Chatbot {
       this.features = {
         speechToText: false,
         textToSpeech: false,
-        fileUpload: false,
         suggestedQuestionsAfterAnswer: false,
+      };
+      this.fileUpload = {
+        image: {},
+        document: {},
+        video: {},
+        audio: {},
       };
       this.userInput = {
         text_input: [],
@@ -1257,7 +1262,7 @@ class Chatbot {
  * @property {Object} features - アプリケーション機能の有効状態
  * @property {boolean} features.speechToText - 音声認識機能の有効状態
  * @property {boolean} features.textToSpeech - 音声合成機能の有効状態
- * @property {boolean} features.fileUpload - ファイルアップロード機能の有効状態
+ * @property {object} fileUpload - ファイルアップロード機能の有効状態
  * @property {boolean} features.suggestedQuestionsAfterAnswer - 回答後推奨質問機能の有効状態
  * @property {Object} userInput - ユーザー入力フォーム構成
  * @property {Array} userInput.text_input - テキスト入力項目
@@ -2070,15 +2075,15 @@ class Chatflow {
           appParams.speech_to_text && appParams.speech_to_text.enabled,
         textToSpeech:
           appParams.text_to_speech && appParams.text_to_speech.enabled,
-        fileUpload: {
-          image: appParams.file_upload.image || {},
-          document: appParams.file_upload.document || {},
-          video: appParams.file_upload.video || {},
-          audio: appParams.file_upload.audio || {},
-        },
         suggestedQuestionsAfterAnswer:
           appParams.suggested_questions_after_answer &&
           appParams.suggested_questions_after_answer.enabled,
+      };
+      this.fileUpload = {
+        image: appParams.file_upload.image || {},
+        document: appParams.file_upload.document || {},
+        video: appParams.file_upload.video || {},
+        audio: appParams.file_upload.audio || {},
       };
       // ユーザー入力フォームの構成の設定も保存
       this.userInput = {
@@ -2111,9 +2116,15 @@ class Chatflow {
       this.features = {
         speechToText: false,
         textToSpeech: false,
-        fileUpload: false,
         suggestedQuestionsAfterAnswer: false,
       };
+      this.fileUpload = {
+        image: {},
+        document: {},
+        video: {},
+        audio: {},
+      };
+      // ユーザー入力フォームの構成もデフォルト値を設定
       this.userInput = {
         text_input: [],
         paragraph: [],
