@@ -83,13 +83,9 @@ class Workflow {
    *   "workflow_run_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
    *   "task_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
    *   "status": "succeeded",
-   *   "outputs": {},
+   *   "workflow_outputs": {},
+   *   "node_outputs": [],
    *   "error": null,
-   *   "total_steps": 5,
-   *   "total_tokens": 123,
-   *   "elapsed_time": 12.5,
-   *   "created_at": 123,
-   *   "finished_at": 123,
    *   "combined_text": "結合されたテキスト出力",
    *   "text_chunks": [
    *     {
@@ -97,13 +93,7 @@ class Workflow {
    *       "from_variable_selector": ["node_id", "variable_name"]
    *     }
    *   ],
-   *   "audio_chunks": [
-   *     {
-   *       "audio": "Base64エンコードされたMP3音声データ",
-   *       "message_id": "message-id",
-   *       "created_at": 123
-   *     }
-   *   ]
+   *   "audio": "Base64エンコードされたMP3音声データまたはnull"
    * }
    * ```
    */
@@ -262,7 +252,7 @@ class Workflow {
     return this._makeRequest(
       "/workflows/tasks/" + taskId + "/stop",
       "POST",
-      payload,
+      payload
     );
   }
 
@@ -378,8 +368,7 @@ class Workflow {
     } catch (error) {
       // 初期化時のエラーは警告として記録し、デフォルト値を設定
       Logger.log(
-        "アプリケーション機能の初期化中にエラーが発生しました: " +
-          error.message,
+        "アプリケーション機能の初期化中にエラーが発生しました: " + error.message
       );
       // 成功時と同じプロパティ構造に合わせる
       this.fileUpload = {
@@ -427,7 +416,7 @@ class Workflow {
       throw new Error(
         `ファイルサイズが制限を超えています。最大サイズ: ${
           MAX_FILE_SIZE / (1024 * 1024)
-        }MB`,
+        }MB`
       );
     }
 
@@ -467,7 +456,7 @@ class Workflow {
       throw new Error(
         `ファイルアップロードエラー (HTTP ${response.getResponseCode()}): ${
           errorInfo.message || errorInfo.error || "不明なエラー"
-        }`,
+        }`
       );
     }
 
@@ -490,8 +479,9 @@ class Workflow {
       const content = response.getContentText();
       const lines = content.split("\n");
       let workflowRunId = null;
+      let nodeOutputs = [];
+      let workflowOutput = {};
       let taskId = null;
-      let outputs = {};
       let status = "";
       let error = null;
       let combinedText = "";
@@ -541,18 +531,18 @@ class Workflow {
               case "workflow_finished":
                 Logger.log("workflow_finished event received");
                 if (json.data) {
-                  outputs = json.data.outputs || {};
+                  workflowOutput = json.data.outputs || {};
                   error = json.data.error;
                   status = json.data.status || "succeeded";
                   // json.data.outputsの詳細ログを追加
                   if (json.data.outputs) {
                     Logger.log(
                       "workflow_finished - json.data.outputs structure: " +
-                        JSON.stringify(json.data.outputs, null, 2),
+                        JSON.stringify(json.data.outputs, null, 2)
                     );
                   } else {
                     Logger.log(
-                      "workflow_finished - json.data.outputs is null or undefined",
+                      "workflow_finished - json.data.outputs is null or undefined"
                     );
                   }
                 }
@@ -562,7 +552,7 @@ class Workflow {
                 Logger.log(
                   `node_started event received - Node: ${
                     json.data?.title || json.data?.node_id
-                  } (${json.data?.node_type})`,
+                  } (${json.data?.node_type})`
                 );
                 break;
 
@@ -570,17 +560,18 @@ class Workflow {
                 Logger.log(
                   `node_finished event received - Node: ${
                     json.data?.title || json.data?.node_id
-                  } (${json.data?.status})`,
+                  } (${json.data?.status})`
                 );
                 // json.data.outputsの詳細ログを追加
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2),
+                      JSON.stringify(json.data.outputs, null, 2)
                   );
+                  nodeOutputs.push(json.data.outputs);
                 } else {
                   Logger.log(
-                    "node_finished - json.data.outputs is null or undefined",
+                    "node_finished - json.data.outputs is null or undefined"
                   );
                 }
                 break;
@@ -588,7 +579,12 @@ class Workflow {
               case "tts_message":
                 Logger.log("tts_message event received");
                 if (json.audio) {
-                  audio = json.audio;
+                  const audioBlob = Utilities.newBlob(
+                    Utilities.base64Decode(json.audio),
+                    "audio/mpeg",
+                    "tts_audio.mp3"
+                  );
+                  audio = audioBlob;
                 }
                 break;
 
@@ -610,12 +606,13 @@ class Workflow {
                 Logger.log(`未知のイベント: ${json.event}`);
                 break;
             }
-          } catch (parseError) {
+          } catch (e) {
             Logger.log(
-              `JSON解析エラー: ${parseError.message}, データ: ${dataStr}`,
+              "Error parsing JSON line: " + line + " - " + e.toString()
             );
-            // 解析エラーは無視して続行
+            // JSONパースエラーは継続処理（部分データの可能性）
           }
+          // 解析エラーは無視して続行
         }
       }
 
@@ -623,7 +620,8 @@ class Workflow {
         workflow_run_id: workflowRunId,
         task_id: taskId,
         status: status,
-        outputs: outputs,
+        workflow_outputs: workflowOutput,
+        node_outputs: nodeOutputs,
         error: error,
         combined_text: combinedText,
         text_chunks: textChunks,
@@ -641,7 +639,7 @@ class Workflow {
       throw new Error(
         `ワークフローAPI エラー (HTTP ${responseCode}): ${
           errorInfo.message || errorInfo.error || "不明なエラー"
-        }`,
+        }`
       );
     }
   }
@@ -704,7 +702,7 @@ class Workflow {
           responseText
         ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
         throw new Error(
-          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`,
+          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`
         );
       }
 
@@ -737,7 +735,7 @@ class Workflow {
 
     // 古いリクエストを削除
     this._rateLimitRequests = this._rateLimitRequests.filter(
-      (timestamp) => now - timestamp < this._rateLimitWindow,
+      (timestamp) => now - timestamp < this._rateLimitWindow
     );
 
     // リクエスト数が上限に達している場合、エラーを投げる
@@ -745,7 +743,7 @@ class Workflow {
       throw new Error(
         `レート制限に達しました。${this._rateLimitWindow / 1000}秒間に${
           this._rateLimitMax
-        }リクエストを超えています`,
+        }リクエストを超えています`
       );
     }
 
@@ -762,8 +760,7 @@ class Workflow {
   _buildQueryString(params) {
     return Object.keys(params)
       .map(
-        (key) =>
-          `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
+        (key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
       )
       .join("&");
   }
