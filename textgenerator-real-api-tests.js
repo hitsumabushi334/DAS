@@ -13,17 +13,17 @@
  */
 const TEXTGEN_REAL_API_TEST_CONFIG = {
   API_KEY: PropertiesService.getScriptProperties().getProperty(
-    "DIFY_TEXTGEN_API_KEY",
+    "DIFY_TEXTGEN_API_KEY"
   ), // 実際のAPIキーに変更してください
   BASE_URL: "https://api.dify.ai/v1", // 実際のDifyインスタンスURLに変更してください
   TEST_USER: "test-user-textgen-api-real", // テスト用ユーザーID
   TEXTGEN_APP_ID: PropertiesService.getScriptProperties().getProperty(
-    "DIFY_TEXTGEN_APP_ID",
+    "DIFY_TEXTGEN_APP_ID"
   ), // テキストジェネレーションアプリID
   ENABLE_FILE_TESTS: true, // ファイルテストを有効にする場合はtrueに設定
   ENABLE_AUDIO_TESTS: true, // 音声テストを有効にする場合はtrueに設定
   ENABLE_FEEDBACK_TESTS: true, // フィードバックテストを有効にする場合はtrueに設定
-  ENABLE_DESTRUCTIVE_TESTS: false, // 停止系テストを有効にする場合はtrueに設定
+  ENABLE_DESTRUCTIVE_TESTS: true, // 停止系テストを有効にする場合はtrueに設定
   TEST_TIMEOUT: 30000, // テストタイムアウト（ミリ秒）
 };
 
@@ -42,7 +42,7 @@ class TextgeneratorRealApiTestFramework {
   assertEqual(actual, expected, message) {
     if (actual !== expected) {
       throw new Error(
-        `アサーション失敗: ${message}. 期待値: ${expected}, 実際の値: ${actual}`,
+        `アサーション失敗: ${message}. 期待値: ${expected}, 実際の値: ${actual}`
       );
     }
   }
@@ -56,7 +56,7 @@ class TextgeneratorRealApiTestFramework {
   assertNotNull(value, message) {
     if (value === null || value === undefined) {
       throw new Error(
-        `アサーション失敗: ${message}. 値がnullまたはundefinedです`,
+        `アサーション失敗: ${message}. 値がnullまたはundefinedです`
       );
     }
   }
@@ -100,7 +100,7 @@ class TextgeneratorRealApiTestFramework {
         message: error.message,
       });
       console.error(
-        `❌ テスト失敗: ${testName} (${duration}ms) - ${error.message}`,
+        `❌ テスト失敗: ${testName} (${duration}ms) - ${error.message}`
       );
     }
   }
@@ -119,7 +119,9 @@ class TextgeneratorRealApiTestFramework {
     console.log(`成功: ${passedTests.length}`);
     console.log(`失敗: ${failedTests.length}`);
     console.log(
-      `成功率: ${((passedTests.length / this.testResults.length) * 100).toFixed(1)}%`,
+      `成功率: ${((passedTests.length / this.testResults.length) * 100).toFixed(
+        1
+      )}%`
     );
 
     if (failedTests.length > 0) {
@@ -158,7 +160,7 @@ function runTextgeneratorRealApiTests() {
   if (!TEXTGEN_REAL_API_TEST_CONFIG.API_KEY) {
     console.error("❌ エラー: DIFY_TEXTGEN_API_KEYが設定されていません");
     console.log(
-      "PropertiesService.getScriptProperties().setProperty('DIFY_TEXTGEN_API_KEY', 'your-api-key');を実行してください",
+      "PropertiesService.getScriptProperties().setProperty('DIFY_TEXTGEN_API_KEY', 'your-api-key');を実行してください"
     );
     return;
   }
@@ -184,7 +186,7 @@ function runTextgeneratorRealApiTests() {
     framework.assertNotNull(appInfo, "アプリケーション情報が取得できません");
     framework.assertTrue(
       typeof appInfo.name === "string",
-      "アプリケーション名が文字列ではありません",
+      "アプリケーション名が文字列ではありません"
     );
     console.log("📋 アプリケーション名:", appInfo.name);
   });
@@ -194,7 +196,7 @@ function runTextgeneratorRealApiTests() {
     framework.assertNotNull(params, "パラメータ情報が取得できません");
     framework.assertTrue(
       Array.isArray(params.user_input_form),
-      "user_input_formが配列ではありません",
+      "user_input_formが配列ではありません"
     );
     console.log("⚙️ ユーザー入力フォーム数:", params.user_input_form.length);
   });
@@ -204,7 +206,7 @@ function runTextgeneratorRealApiTests() {
     framework.assertNotNull(settings, "WebApp設定が取得できません");
     framework.assertTrue(
       typeof settings.title === "string",
-      "WebAppタイトルが文字列ではありません",
+      "WebAppタイトルが文字列ではありません"
     );
     console.log("🎨 WebAppタイトル:", settings.title);
   });
@@ -214,23 +216,23 @@ function runTextgeneratorRealApiTests() {
     const response = textgen.createCompletionMessage(
       { query: "Hello, this is a test message for streaming mode." },
       null,
-      { response_mode: "streaming" },
+      { response_mode: "streaming" }
     );
 
     framework.assertNotNull(response, "レスポンスがnullです");
     framework.assertNotNull(
       response.message_id,
-      "message_idが設定されていません",
+      "message_idが設定されていません"
     );
     framework.assertTrue(
       typeof response.answer === "string",
-      "answerが文字列ではありません",
+      "answerが文字列ではありません"
     );
     framework.assertTrue(response.answer.length > 0, "answerが空です");
 
     console.log(
       "💬 生成されたメッセージ:",
-      response.answer.substring(0, 100) + "...",
+      response.answer.substring(0, 100) + "..."
     );
 
     // 後続のテストで使用するためにmessage_idを保存
@@ -244,27 +246,27 @@ function runTextgeneratorRealApiTests() {
     const response = textgen.createCompletionMessage(
       { query: "Hello, this is a test message for blocking mode." },
       null,
-      { response_mode: "blocking" },
+      { response_mode: "blocking" }
     );
 
     framework.assertNotNull(response, "レスポンスがnullです");
     framework.assertNotNull(
       response.message_id,
-      "message_idが設定されていません",
+      "message_idが設定されていません"
     );
     framework.assertTrue(
       typeof response.answer === "string",
-      "answerが文字列ではありません",
+      "answerが文字列ではありません"
     );
     framework.assertEqual(
       response.event,
       "message",
-      "eventが'message'ではありません",
+      "eventが'message'ではありません"
     );
 
     console.log(
       "🔒 Blockingモード応答:",
-      response.answer.substring(0, 100) + "...",
+      response.answer.substring(0, 100) + "..."
     );
   });
 
@@ -277,18 +279,18 @@ function runTextgeneratorRealApiTests() {
       framework.assertNotNull(uploadResult, "アップロード結果がnullです");
       framework.assertNotNull(
         uploadResult.id,
-        "ファイルIDが設定されていません",
+        "ファイルIDが設定されていません"
       );
       framework.assertTrue(
         typeof uploadResult.name === "string",
-        "ファイル名が文字列ではありません",
+        "ファイル名が文字列ではありません"
       );
       framework.assertTrue(uploadResult.size > 0, "ファイルサイズが0以下です");
 
       console.log(
         "📁 アップロードファイル:",
         uploadResult.name,
-        `(${uploadResult.size}bytes)`,
+        `(${uploadResult.size}bytes)`
       );
     });
   }
@@ -306,13 +308,13 @@ function runTextgeneratorRealApiTests() {
 
       const result = textgen.submitMessageFeedback(
         this.lastMessageId,
-        feedback,
+        feedback
       );
       framework.assertNotNull(result, "フィードバック結果がnullです");
       framework.assertEqual(
         result.result,
         "success",
-        "フィードバック送信が成功していません",
+        "フィードバック送信が成功していません"
       );
 
       console.log("👍 フィードバック送信完了");
@@ -323,7 +325,7 @@ function runTextgeneratorRealApiTests() {
       framework.assertNotNull(feedbacks, "フィードバック一覧がnullです");
       framework.assertTrue(
         Array.isArray(feedbacks.data),
-        "フィードバックデータが配列ではありません",
+        "フィードバックデータが配列ではありません"
       );
 
       console.log("📝 フィードバック件数:", feedbacks.data.length);
@@ -339,18 +341,18 @@ function runTextgeneratorRealApiTests() {
 
       framework.assertNotNull(audioBlob, "音声Blobがnullです");
       framework.assertTrue(
-        audioBlob.getSize() > 0,
-        "音声ファイルのサイズが0以下です",
+        audioBlob.getBytes().length > 0,
+        "音声ファイルのサイズが0以下です"
       );
       framework.assertTrue(
         audioBlob.getContentType().includes("audio"),
-        "音声ファイルのContent-Typeが正しくありません",
+        "音声ファイルのContent-Typeが正しくありません"
       );
 
       console.log(
         "🔊 音声ファイル生成:",
         audioBlob.getName(),
-        `(${audioBlob.getSize()}bytes)`,
+        `(${audioBlob.getBytes().length}bytes)`
       );
     });
   }
@@ -374,7 +376,7 @@ function runTextgeneratorRealApiTests() {
       framework.assertThrows(() => {
         textgen.submitMessageFeedback("invalid-message-id", { rating: "like" });
       }, "無効なメッセージIDで例外が発生しません");
-    },
+    }
   );
 
   // 8. 停止機能テスト（破壊的テストが有効な場合のみ）
@@ -384,7 +386,7 @@ function runTextgeneratorRealApiTests() {
       const response = textgen.createCompletionMessage(
         { query: "This is a long message that we will try to stop..." },
         null,
-        { response_mode: "streaming" },
+        { response_mode: "streaming" }
       );
 
       if (response.task_id) {
@@ -421,13 +423,13 @@ function testTextgeneratorAppInfo() {
     const appInfo = textgen.getAppInfo();
     console.log(
       "📋 アプリケーション基本情報:",
-      JSON.stringify(appInfo, null, 2),
+      JSON.stringify(appInfo, null, 2)
     );
 
     const params = textgen.getAppParameters();
     console.log(
       "⚙️ アプリケーションパラメータ:",
-      JSON.stringify(params, null, 2),
+      JSON.stringify(params, null, 2)
     );
 
     const settings = textgen.getWebAppSettings();
@@ -458,11 +460,11 @@ function testTextgeneratorCompletion() {
           "Explain the concept of artificial intelligence in simple terms.",
       },
       null,
-      { response_mode: "streaming" },
+      { response_mode: "streaming" }
     );
     console.log(
       "📊 Streaming結果:",
-      JSON.stringify(streamingResponse, null, 2),
+      JSON.stringify(streamingResponse, null, 2)
     );
 
     // Blockingモードテスト
@@ -470,7 +472,7 @@ function testTextgeneratorCompletion() {
     const blockingResponse = textgen.createCompletionMessage(
       { query: "What is machine learning?" },
       null,
-      { response_mode: "blocking" },
+      { response_mode: "blocking" }
     );
     console.log("📊 Blocking結果:", JSON.stringify(blockingResponse, null, 2));
   } catch (error) {
@@ -518,7 +520,7 @@ function testTextgeneratorAudio() {
 
     console.log("🔊 音声ファイル情報:");
     console.log("  - ファイル名:", audioBlob.getName());
-    console.log("  - サイズ:", audioBlob.getSize(), "bytes");
+    console.log("  - サイズ:", audioBlob.getBytes().length, "bytes");
     console.log("  - Content-Type:", audioBlob.getContentType());
 
     // Google Driveに保存してテスト用に確認
@@ -535,7 +537,7 @@ function testTextgeneratorAudio() {
 function setTextgeneratorApiKey(apiKey) {
   PropertiesService.getScriptProperties().setProperty(
     "DIFY_TEXTGEN_API_KEY",
-    apiKey,
+    apiKey
   );
   console.log("✅ Textgenerator APIキーを設定しました");
 }
@@ -543,7 +545,7 @@ function setTextgeneratorApiKey(apiKey) {
 function setTextgeneratorAppId(appId) {
   PropertiesService.getScriptProperties().setProperty(
     "DIFY_TEXTGEN_APP_ID",
-    appId,
+    appId
   );
   console.log("✅ Textgenerator アプリIDを設定しました");
 }
@@ -555,30 +557,30 @@ function checkTextgeneratorTestConfig() {
   console.log("🔍 Textgenerator テスト設定状況:");
   console.log(
     "  - API Key:",
-    TEXTGEN_REAL_API_TEST_CONFIG.API_KEY ? "✅ 設定済み" : "❌ 未設定",
+    TEXTGEN_REAL_API_TEST_CONFIG.API_KEY ? "✅ 設定済み" : "❌ 未設定"
   );
   console.log("  - Base URL:", TEXTGEN_REAL_API_TEST_CONFIG.BASE_URL);
   console.log("  - Test User:", TEXTGEN_REAL_API_TEST_CONFIG.TEST_USER);
   console.log(
     "  - App ID:",
-    TEXTGEN_REAL_API_TEST_CONFIG.TEXTGEN_APP_ID ? "✅ 設定済み" : "❌ 未設定",
+    TEXTGEN_REAL_API_TEST_CONFIG.TEXTGEN_APP_ID ? "✅ 設定済み" : "❌ 未設定"
   );
   console.log(
     "  - File Tests:",
-    TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_FILE_TESTS ? "✅ 有効" : "❌ 無効",
+    TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_FILE_TESTS ? "✅ 有効" : "❌ 無効"
   );
   console.log(
     "  - Audio Tests:",
-    TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_AUDIO_TESTS ? "✅ 有効" : "❌ 無効",
+    TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_AUDIO_TESTS ? "✅ 有効" : "❌ 無効"
   );
   console.log(
     "  - Feedback Tests:",
-    TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_FEEDBACK_TESTS ? "✅ 有効" : "❌ 無効",
+    TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_FEEDBACK_TESTS ? "✅ 有効" : "❌ 無効"
   );
   console.log(
     "  - Destructive Tests:",
     TEXTGEN_REAL_API_TEST_CONFIG.ENABLE_DESTRUCTIVE_TESTS
       ? "✅ 有効"
-      : "❌ 無効",
+      : "❌ 無効"
   );
 }

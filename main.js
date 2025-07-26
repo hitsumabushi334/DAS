@@ -514,21 +514,33 @@ class Chatbot {
       requestOptions
     );
 
-    if (response.getResponseCode() !== HTTP_STATUS.OK) {
+    const responseCode = response.getResponseCode();
+
+    if (responseCode !== 200) {
       let errorInfo;
       try {
-        errorInfo = JSON.parse(response.getContentText());
+        const responseText = response.getContentText();
+        errorInfo = JSON.parse(responseText);
       } catch (e) {
         errorInfo = { message: response.getContentText() };
       }
+
       throw new Error(
-        `テキスト音声変換エラー: ${
-          errorInfo.message || errorInfo.error || response.getContentText()
+        `音声変換エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
 
-    return response.getBlob();
+    // レスポンスの音声データをBlobとして返す
+    const contentType = response.getHeaders()["Content-Type"] || "audio/mp3";
+    const audioData = response.getBlob();
+
+    // ファイル名を適切に設定
+    const extension = contentType.includes("wav") ? "wav" : "mp3";
+    const fileName = `audio_${Date.now()}.${extension}`;
+
+    return audioData.setName(fileName);
   }
 
   /**
@@ -1740,22 +1752,33 @@ class Chatflow {
       this.baseUrl + "/text-to-audio",
       requestOptions
     );
+    const responseCode = response.getResponseCode();
 
-    if (response.getResponseCode() !== HTTP_STATUS.OK) {
+    if (responseCode !== 200) {
       let errorInfo;
       try {
-        errorInfo = JSON.parse(response.getContentText());
+        const responseText = response.getContentText();
+        errorInfo = JSON.parse(responseText);
       } catch (e) {
         errorInfo = { message: response.getContentText() };
       }
+
       throw new Error(
-        `テキスト音声変換エラー: ${
-          errorInfo.message || errorInfo.error || response.getContentText()
+        `音声変換エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
 
-    return response.getBlob();
+    // レスポンスの音声データをBlobとして返す
+    const contentType = response.getHeaders()["Content-Type"] || "audio/mp3";
+    const audioData = response.getBlob();
+
+    // ファイル名を適切に設定
+    const extension = contentType.includes("wav") ? "wav" : "mp3";
+    const fileName = `audio_${Date.now()}.${extension}`;
+
+    return audioData.setName(fileName);
   }
 
   /**
