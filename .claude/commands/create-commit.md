@@ -1,3 +1,8 @@
+---
+allowed-tools: Bash(git commit:*),Bash(git add:*), Bash(git status:*),
+description: gitコミットの作成
+---
+
 # commit メッセージを作成
 
 ## 実行手順
