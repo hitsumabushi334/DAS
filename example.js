@@ -14,17 +14,33 @@ function audioExample() {
 
 // TTSを用いてテキストジェネレータークラスで音声ファイルを生成し、Google Driveに保存する例
 function textToSpeechExample() {
+  const apiKey = PropertiesService.getScriptProperties().getProperty(
+    "DIFY_TEXTGEN_API_KEY"
+  );
+  if (!apiKey) {
+    throw new Error("DIFY_TEXTGEN_API_KEY が設定されていません");
+  }
+
   const textGenerator = new Textgenerator({
-    apiKey: PropertiesService.getScriptProperties().getProperty("DIFY_TEXTGEN_API_KEY"),
+    apiKey: apiKey,
     user: "textToSpeechExample",
     baseUrl: "https://api.dify.ai/v1",
   });
   const text = "こんにちは、これは音声合成のテストです。";
-  const audioBlob = textGenerator.textToAudio({
-    text: text,
-  });
 
-  // Google Driveに保存
-  const file = DriveApp.createFile(audioBlob);
-  Logger.log("音声ファイルが作成されました: " + file.getUrl());
+  try {
+    const audioBlob = textGenerator.textToAudio({
+      text: text,
+    });
+
+    // 適切なファイル名と拡張子を設定
+    audioBlob.setName(`tts_${new Date().getTime()}.wav`);
+
+    // Google Driveに保存
+    const file = DriveApp.createFile(audioBlob);
+    Logger.log("音声ファイルが作成されました: " + file.getUrl());
+  } catch (error) {
+    Logger.log("音声ファイルの作成に失敗しました: " + error.message);
+    throw error;
+  }
 }
