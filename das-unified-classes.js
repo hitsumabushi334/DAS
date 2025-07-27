@@ -275,7 +275,8 @@ class Dify {
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
     if (file.getSize && file.getSize() > MAX_FILE_SIZE) {
       throw new Error(
-        `ファイルサイズが制限を超えています。最大サイズ: ${MAX_FILE_SIZE / (1024 * 1024)
+        `ファイルサイズが制限を超えています。最大サイズ: ${
+          MAX_FILE_SIZE / (1024 * 1024)
         }MB`
       );
     }
@@ -314,14 +315,14 @@ class Dify {
       }
 
       throw new Error(
-        `ファイルアップロードエラー (HTTP ${response.getResponseCode()}): ${errorInfo.message || errorInfo.error || "不明なエラー"
+        `ファイルアップロードエラー (HTTP ${response.getResponseCode()}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
 
     return JSON.parse(response.getContentText());
   }
-
 
   /**
    * テキストを音声に変換する
@@ -391,7 +392,8 @@ class Dify {
       }
 
       throw new Error(
-        `音声変換エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
+        `音声変換エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
@@ -522,7 +524,6 @@ class Dify {
     );
 
     try {
-
       // ストリーミングモードの場合
       if (payload.response_mode === "streaming") {
         // ストリーミング用の特別な処理
@@ -635,7 +636,6 @@ class Dify {
     }
   }
 
-
   /**
    * レート制限をチェック（内部メソッド）
    *
@@ -652,7 +652,8 @@ class Dify {
     // 制限チェック
     if (this._rateLimitRequests.length >= this._rateLimitMax) {
       throw new Error(
-        `レート制限に達しました（${this._rateLimitMax}リクエスト/${this._rateLimitWindow / 1000
+        `レート制限に達しました（${this._rateLimitMax}リクエスト/${
+          this._rateLimitWindow / 1000
         }秒）`
       );
     }
@@ -893,7 +894,7 @@ class ChatBase extends Dify {
     const queryString = this._buildQueryString(params);
     const endpoint = queryString ? "/messages?" + queryString : "/messages";
 
-    return this._makeRequest(endpoint + queryString, "GET");
+    return this._makeRequest(endpoint, "GET");
   }
 
   /**
@@ -1026,7 +1027,8 @@ class ChatBase extends Dify {
       }
 
       throw new Error(
-        `音声変換エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
+        `音声変換エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
@@ -1106,7 +1108,6 @@ class ChatBase extends Dify {
    */
   _initializeChatFeatures() {
     try {
-      const appSite = this.getWebAppSettings();
       const appParameters = this.getAppParameters();
 
       // チャット固有機能の有効状態を取得
@@ -1401,9 +1402,9 @@ class Chatbot extends ChatBase {
     } else {
       Logger.log(
         "Streaming API error - HTTP " +
-        responseCode +
-        ": " +
-        response.getContentText()
+          responseCode +
+          ": " +
+          response.getContentText()
       );
       let errorInfo;
       try {
@@ -1412,7 +1413,8 @@ class Chatbot extends ChatBase {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || response.getContentText()
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || response.getContentText()
         }`
       );
     }
@@ -1617,7 +1619,7 @@ class Chatflow extends ChatBase {
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                    JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2)
                   );
                   nodeOutputs.push(json.data.outputs);
                 } else {
@@ -1638,7 +1640,7 @@ class Chatflow extends ChatBase {
                 if (json.data?.outputs) {
                   Logger.log(
                     "workflow_finished - json.data.outputs structure: " +
-                    JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2)
                   );
                   workflowOutput = json.data.outputs;
                 } else {
@@ -1711,9 +1713,9 @@ class Chatflow extends ChatBase {
     } else {
       Logger.log(
         "Streaming API error - HTTP " +
-        responseCode +
-        ": " +
-        response.getContentText()
+          responseCode +
+          ": " +
+          response.getContentText()
       );
       let errorInfo;
       try {
@@ -1722,7 +1724,8 @@ class Chatflow extends ChatBase {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || response.getContentText()
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || response.getContentText()
         }`
       );
     }
@@ -2054,7 +2057,8 @@ class Textgenerator extends Dify {
       }
 
       throw new Error(
-        `テキストジェネレーターAPI エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
+        `テキストジェネレーターAPI エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
@@ -2327,7 +2331,7 @@ class Workflow extends Dify {
                   if (json.data.outputs) {
                     Logger.log(
                       "workflow_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                        JSON.stringify(json.data.outputs, null, 2)
                     );
                   } else {
                     Logger.log(
@@ -2339,21 +2343,23 @@ class Workflow extends Dify {
 
               case "node_started":
                 Logger.log(
-                  `node_started event received - Node: ${json.data?.title || json.data?.node_id
+                  `node_started event received - Node: ${
+                    json.data?.title || json.data?.node_id
                   } (${json.data?.node_type})`
                 );
                 break;
 
               case "node_finished":
                 Logger.log(
-                  `node_finished event received - Node: ${json.data?.title || json.data?.node_id
+                  `node_finished event received - Node: ${
+                    json.data?.title || json.data?.node_id
                   } (${json.data?.status})`
                 );
                 // json.data.outputsの詳細ログを追加
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                    JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2)
                   );
                   nodeOutputs.push(json.data.outputs);
                 } else {
@@ -2425,7 +2431,8 @@ class Workflow extends Dify {
       }
 
       throw new Error(
-        `ワークフローAPI エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
+        `ワークフローAPI エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }

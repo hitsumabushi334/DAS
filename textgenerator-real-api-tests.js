@@ -364,10 +364,10 @@ function runTextgeneratorRealApiTests() {
     }, "無効な入力で例外が発生しません");
   });
 
-  const response = textgen.stopCompletionTask("invalid-task-id");
+  const response = textgen.stopTask("invalid-task-id");
   framework.runTest("無効なタスクIDでの停止エラーハンドリング", () => {
     framework.assertThrows(() => {
-      textgen.stopCompletionTask("invalid-task-id");
+      textgen.stopTask("invalid-task-id");
     }, `無効なタスクIDで例外が発生しません ${JSON.stringify(response)}`);
   });
 
