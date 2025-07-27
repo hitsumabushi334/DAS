@@ -266,47 +266,62 @@ class Dify {
    * console.log(result.id);
    */
   uploadFile(file, user) {
-    // パラメータ検証
+    user = user || this.user;
     if (!file) {
-      throw new Error("ファイルは必須です");
+      throw new Error(`fileは必須パラメータです`);
     }
 
-    const actualUser = user || this.user;
-    if (!actualUser) {
-      throw new Error("ユーザー識別子は必須です");
-    }
-
-    // ファイルサイズ制限チェック
-    const maxFileSize =
-      this.systemParameters.file_upload_limit || 50 * 1024 * 1024; // デフォルト50MB
-    if (file.size > maxFileSize) {
+    // ファイルサイズ検証 (50MB制限)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.getSize && file.getSize() > MAX_FILE_SIZE) {
       throw new Error(
-        `ファイルサイズが制限を超えています（最大: ${Math.round(
-          maxFileSize / 1024 / 1024
-        )}MB）`
+        `ファイルサイズが制限を超えています。最大サイズ: ${MAX_FILE_SIZE / (1024 * 1024)
+        }MB`
       );
     }
 
-    console.log(
-      `📤 ファイルをアップロードしています... (${Math.round(
-        file.size / 1024
-      )}KB)`
-    );
+    const formData = {
+      file: file,
+      user: user,
+    };
 
-    try {
-      const formData = {
-        file: file,
-        user: actualUser,
-      };
+    const options = {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + this.apiKey,
+      },
+      payload: formData,
+      muteHttpExceptions: true,
+    };
 
-      const response = this._makeRequest("/files/upload", "POST", formData);
-      console.log("✅ ファイルアップロードが完了しました");
-      return response;
-    } catch (error) {
-      console.error("❌ ファイルアップロードに失敗しました:", error.message);
-      throw error;
+    const response = UrlFetchApp.fetch(this.baseUrl + "/files/upload", options);
+
+    const HTTP_STATUS = {
+      OK: 200,
+      CREATED: 201,
+    };
+
+    if (
+      response.getResponseCode() !== HTTP_STATUS.OK &&
+      response.getResponseCode() !== HTTP_STATUS.CREATED
+    ) {
+      let errorInfo;
+      try {
+        const responseText = response.getContentText();
+        errorInfo = JSON.parse(responseText);
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
+
+      throw new Error(
+        `ファイルアップロードエラー (HTTP ${response.getResponseCode()}): ${errorInfo.message || errorInfo.error || "不明なエラー"
+        }`
+      );
     }
+
+    return JSON.parse(response.getContentText());
   }
+
 
   /**
    * テキストを音声に変換する
@@ -376,8 +391,7 @@ class Dify {
       }
 
       throw new Error(
-        `音声変換エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
+        `音声変換エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
@@ -508,18 +522,27 @@ class Dify {
     );
 
     try {
-      const response = this._makeRequest(endpoint, "POST", payload);
 
-      // ストリーミングレスポンスの解析（サブクラス固有）
-      if (
-        options.response_mode === "streaming" &&
-        this._parseStreamingResponse
-      ) {
+      // ストリーミングモードの場合
+      if (payload.response_mode === "streaming") {
+        // ストリーミング用の特別な処理
+        const url = this.baseUrl + endpoint;
+        const options = {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + this.apiKey,
+            "Content-Type": "application/json",
+          },
+          payload: JSON.stringify(payload),
+          muteHttpExceptions: true,
+        };
+        const response = UrlFetchApp.fetch(url, options);
         return this._parseStreamingResponse(response);
+      } else {
+        const response = this._makeRequest(endpoint, "POST", payload);
+        console.log(`✅ ${operationName}が完了しました`);
+        return response;
       }
-
-      console.log(`✅ ${operationName}が完了しました`);
-      return response;
     } catch (error) {
       console.error(
         `❌ ${operationName}に失敗しました [${this.constructor.name}]:`,
@@ -612,6 +635,7 @@ class Dify {
     }
   }
 
+
   /**
    * レート制限をチェック（内部メソッド）
    *
@@ -628,8 +652,7 @@ class Dify {
     // 制限チェック
     if (this._rateLimitRequests.length >= this._rateLimitMax) {
       throw new Error(
-        `レート制限に達しました（${this._rateLimitMax}リクエスト/${
-          this._rateLimitWindow / 1000
+        `レート制限に達しました（${this._rateLimitMax}リクエスト/${this._rateLimitWindow / 1000
         }秒）`
       );
     }
@@ -771,21 +794,29 @@ class ChatBase extends Dify {
       throw new Error("クエリは必須の文字列です");
     }
 
-    const actualUser = user || this.user;
-    if (!actualUser) {
+    user = user || this.user;
+    if (!user) {
       throw new Error("ユーザー識別子は必須です");
     }
 
     // ペイロード構築
+    options = options || {};
+
     const payload = {
-      inputs: options.inputs || {},
       query: query,
+      user: user,
+      inputs: options.inputs || {},
       response_mode: options.response_mode || "streaming",
-      user: actualUser,
-      conversation_id: options.conversation_id,
-      files: options.files || [],
       auto_generate_name: options.auto_generate_name !== false,
     };
+
+    if (options.conversation_id) {
+      payload.conversation_id = options.conversation_id;
+    }
+
+    if (options.files) {
+      payload.files = options.files;
+    }
 
     // 共通リクエスト処理を使用
     return this._sendRequest(
@@ -995,8 +1026,7 @@ class ChatBase extends Dify {
       }
 
       throw new Error(
-        `音声変換エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
+        `音声変換エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
@@ -1076,7 +1106,6 @@ class ChatBase extends Dify {
    */
   _initializeChatFeatures() {
     try {
-      const appSite = this.getWebAppSettings();
       const appParameters = this.getAppParameters();
 
       // チャット固有機能の有効状態を取得
@@ -1371,9 +1400,9 @@ class Chatbot extends ChatBase {
     } else {
       Logger.log(
         "Streaming API error - HTTP " +
-          responseCode +
-          ": " +
-          response.getContentText()
+        responseCode +
+        ": " +
+        response.getContentText()
       );
       let errorInfo;
       try {
@@ -1382,8 +1411,7 @@ class Chatbot extends ChatBase {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || response.getContentText()
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || response.getContentText()
         }`
       );
     }
@@ -1588,7 +1616,7 @@ class Chatflow extends ChatBase {
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                    JSON.stringify(json.data.outputs, null, 2)
                   );
                   nodeOutputs.push(json.data.outputs);
                 } else {
@@ -1609,7 +1637,7 @@ class Chatflow extends ChatBase {
                 if (json.data?.outputs) {
                   Logger.log(
                     "workflow_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                    JSON.stringify(json.data.outputs, null, 2)
                   );
                   workflowOutput = json.data.outputs;
                 } else {
@@ -1682,9 +1710,9 @@ class Chatflow extends ChatBase {
     } else {
       Logger.log(
         "Streaming API error - HTTP " +
-          responseCode +
-          ": " +
-          response.getContentText()
+        responseCode +
+        ": " +
+        response.getContentText()
       );
       let errorInfo;
       try {
@@ -1693,8 +1721,7 @@ class Chatflow extends ChatBase {
         errorInfo = { message: response.getContentText() };
       }
       throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || response.getContentText()
+        `ストリーミングAPIエラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || response.getContentText()
         }`
       );
     }
@@ -2026,8 +2053,7 @@ class Textgenerator extends Dify {
       }
 
       throw new Error(
-        `テキストジェネレーターAPI エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
+        `テキストジェネレーターAPI エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
@@ -2300,7 +2326,7 @@ class Workflow extends Dify {
                   if (json.data.outputs) {
                     Logger.log(
                       "workflow_finished - json.data.outputs structure: " +
-                        JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2)
                     );
                   } else {
                     Logger.log(
@@ -2312,23 +2338,21 @@ class Workflow extends Dify {
 
               case "node_started":
                 Logger.log(
-                  `node_started event received - Node: ${
-                    json.data?.title || json.data?.node_id
+                  `node_started event received - Node: ${json.data?.title || json.data?.node_id
                   } (${json.data?.node_type})`
                 );
                 break;
 
               case "node_finished":
                 Logger.log(
-                  `node_finished event received - Node: ${
-                    json.data?.title || json.data?.node_id
+                  `node_finished event received - Node: ${json.data?.title || json.data?.node_id
                   } (${json.data?.status})`
                 );
                 // json.data.outputsの詳細ログを追加
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                    JSON.stringify(json.data.outputs, null, 2)
                   );
                   nodeOutputs.push(json.data.outputs);
                 } else {
@@ -2400,8 +2424,7 @@ class Workflow extends Dify {
       }
 
       throw new Error(
-        `ワークフローAPI エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
+        `ワークフローAPI エラー (HTTP ${responseCode}): ${errorInfo.message || errorInfo.error || "不明なエラー"
         }`
       );
     }
