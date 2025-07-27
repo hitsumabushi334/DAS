@@ -1003,9 +1003,9 @@ class WorkflowRealApiTestSuite {
 
     // 1. 有効なタスクIDでの停止（テストで作成されたIDがある場合）
     if (this.testTaskId) {
-      this.framework.runTest("stopWorkflowTask - 有効なタスクID", () => {
+      this.framework.runTest("stopTask - 有効なタスクID", () => {
         try {
-          const result = this.workflow.stopWorkflowTask(this.testTaskId);
+          const result = this.workflow.stopTask(this.testTaskId);
 
           this.framework.assertNotNull(result, "結果が返される");
           this.framework.assertHasProperty(
@@ -1029,10 +1029,10 @@ class WorkflowRealApiTestSuite {
     }
 
     // 2. 無効なタスクIDでの停止
-    this.framework.runTest("stopWorkflowTask - 無効なタスクID", () => {
+    this.framework.runTest("stopTask - 無効なタスクID", () => {
       try {
         const invalidTaskId = "00000000-0000-0000-0000-000000000000";
-        this.workflow.stopWorkflowTask(invalidTaskId);
+        this.workflow.stopTask(invalidTaskId);
 
         // エラーが期待される
         throw new Error("エラーが発生するはずです");

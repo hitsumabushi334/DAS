@@ -391,7 +391,7 @@ function runTextgeneratorRealApiTests() {
       );
 
       if (response.task_id) {
-        const stopResult = textgen.stopCompletionTask(response.task_id);
+        const stopResult = textgen.stopTask(response.task_id);
         framework.assertNotNull(stopResult, "停止結果がnullです");
         console.log("⏹️ タスク停止完了");
       }
