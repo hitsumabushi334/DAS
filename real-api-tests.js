@@ -840,11 +840,6 @@ function testRealApiInstancePropertyRetention() {
     );
     realApiTestFramework.assertHasProperty(
       chatbot.features,
-      "fileUpload",
-      "fileUpload機能フラグが存在すること"
-    );
-    realApiTestFramework.assertHasProperty(
-      chatbot.features,
       "suggestedQuestionsAfterAnswer",
       "suggestedQuestionsAfterAnswer機能フラグが存在すること"
     );

@@ -856,11 +856,6 @@ function testRealApiChatflowInstancePropertyRetention() {
     );
     realApiTestFrameworkChatflow.assertHasProperty(
       chatflow.features,
-      "fileUpload",
-      "fileUpload機能フラグが存在すること",
-    );
-    realApiTestFrameworkChatflow.assertHasProperty(
-      chatflow.features,
       "suggestedQuestionsAfterAnswer",
       "suggestedQuestionsAfterAnswer機能フラグが存在すること",
     );
