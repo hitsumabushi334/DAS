@@ -35,15 +35,34 @@ const HTTP_STATUS = {
  * - キャッシュ管理
  * - エラーハンドリング
  * - HTTP リクエスト処理
- */
-/**
- * Dify API クライアントを初期化
+ *
+ *  * Dify API クライアントを初期化
  *
  * @param {Object} options - 設定オプション
  * @param {string} options.apiKey - Dify API キー
  * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
  * @param {string} [options.user] - デフォルトユーザー識別子
  * @throws {Error} API キーが未指定の場合
+ * @property {string} apiKey - Dify APIキー (認証に使用)
+ * @property {string} baseUrl - APIのベースURL (デフォルト: "https://api.dify.ai/v1")
+ * @property {string} user - デフォルトユーザー識別子
+ * @property {Object} _cache - HTTPリクエストのキャッシュ (内部使用)
+ * @property {number} _cacheTimeout - キャッシュの有効期限 (ミリ秒, デフォルト: 5分)
+ * @property {Array<number>} _rateLimitRequests - レート制限用リクエスト履歴 (内部使用)
+ * @property {number} _rateLimitWindow - レート制限ウィンドウ (ミリ秒, デフォルト: 1分)
+ * @property {number} _rateLimitMax - レート制限最大リクエスト数 (デフォルト: 60/分)
+ * @property {Object} features - アプリケーション機能の有効状態
+ * @property {Object} userInput - ユーザー入力フォームの設定
+ * @property {Object} userInput.text_input - テキスト入力フィールドの配列
+ * @property {Object} userInput.paragraph - 段落入力フィールドの配列
+ * @property {Object} userInput.select - 選択入力フィールドの配列
+ * @property {Object} systemParameters - システムパラメータ (ファイルサイズ制限等)
+ * @property {Object} fileUpload - ファイルアップロード設定
+ * @property {Object} fileUpload.image - 画像ファイルアップロード設定
+ * @property {Object} fileUpload.document - 文書ファイルアップロード設定
+ * @property {Object} fileUpload.video - 動画ファイルアップロード設定
+ * @property {Object} fileUpload.audio - 音声ファイルアップロード設定
+ * @property {string} [stopEndpoint] - タスク停止用エンドポイント (サブクラスで設定)
  */
 class Dify {
   constructor(options) {
@@ -693,13 +712,24 @@ class Dify {
  * - 音声変換機能
  * - 推奨質問取得
  * - Template Method パターンによるsendMessage統合
- * ChatBase クライアントを初期化
+ *
+ * **継承プロパティ (Difyクラスから):**
+ * すべてのDifyクラスのプロパティを継承
+ * * ChatBase クライアントを初期化
  *
  * @param {Object} options - 設定オプション
  * @param {string} options.apiKey - Dify API キー
  * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
  * @param {string} [options.user] - デフォルトユーザー識別子
  * @throws {Error} API キーが未指定の場合
+ * **ChatBase特有のプロパティ:**
+ * @property {string} stopEndpoint - チャットメッセージタスク停止用エンドポイント (固定値: "/chat-messages/{taskId}/stop")
+ * @property {Object} features - チャット系機能の有効状態
+ * @property {boolean} features.speechToText - 音声→テキスト変換機能の有効状態
+ * @property {boolean} features.textToSpeech - テキスト→音声変換機能の有効状態
+ * @property {boolean} features.suggestedQuestionsAfterAnswer - 回答後推奨質問機能の有効状態
+ * @property {Array} suggestedQuestions - アプリで設定された推奨質問リスト
+ * @property {string} openingStatement - アプリで設定されたオープニングメッセージ
  */
 class ChatBase extends Dify {
   constructor(options) {
@@ -1107,6 +1137,7 @@ class ChatBase extends Dify {
 
 /**
  * Chatbotクラス - Difyチャットボット機能
+ *
  * Chatbotクライアントを初期化
  *
  * @param {Object} options - 設定オプション
@@ -1114,6 +1145,32 @@ class ChatBase extends Dify {
  * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
  * @param {string} [options.user] - デフォルトユーザー識別子
  * @throws {Error} API キーが未指定の場合
+ * @property {string} stopEndpoint - チャットメッセージタスク停止用エンドポイント (固定値: "/chat-messages/{taskId}/stop")
+ * @property {Object} features - チャット系機能の有効状態
+ * @property {boolean} features.speechToText - 音声→テキスト変換機能の有効状態
+ * @property {boolean} features.textToSpeech - テキスト→音声変換機能の有効状態
+ * @property {boolean} features.suggestedQuestionsAfterAnswer - 回答後推奨質問機能の有効状態
+ * @property {Array} suggestedQuestions - アプリで設定された推奨質問リスト
+ * @property {string} openingStatement - アプリで設定されたオープニングメッセージ
+ *
+ * **継承プロパティ:**
+ * - Difyクラスのすべてのプロパティを継承
+ * - ChatBaseクラスのすべてのプロパティを継承
+ *
+ * **Chatbot特有の動作:**
+ * - ストリーミングレスポンス解析でagent_messageイベントを処理
+ * - agent_thoughtイベントによるエージェント思考プロセスの追跡
+ * - message_replaceイベントによるメッセージ置換の対応
+ * - TTSメッセージイベントによる音声データの処理
+ *
+ * **利用可能なイベント:**
+ * - agent_message: エージェントからのメッセージ
+ * - message: 一般的なメッセージ
+ * - tts_message: テキスト音声合成メッセージ
+ * - agent_thought: エージェントの思考プロセス
+ * - message_file: ファイル関連メッセージ
+ * - message_replace: メッセージ置換
+ * - message_end: メッセージ終了
  */
 class Chatbot extends ChatBase {
   constructor(options) {
@@ -1341,6 +1398,7 @@ class Chatbot extends ChatBase {
 
 /**
  * Chatflowクラス - Difyチャットフロー機能
+ *
  * Chatflowクライアントを初期化
  *
  * @param {Object} options - 設定オプション
@@ -1348,7 +1406,41 @@ class Chatbot extends ChatBase {
  * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
  * @param {string} [options.user] - デフォルトユーザー識別子
  * @throws {Error} API キーが未指定の場合
+ * @property {string} stopEndpoint - チャットメッセージタスク停止用エンドポイント (固定値: "/chat-messages/{taskId}/stop")
+ * @property {Object} features - チャット系機能の有効状態
+ * @property {boolean} features.speechToText - 音声→テキスト変換機能の有効状態
+ * @property {boolean} features.textToSpeech - テキスト→音声変換機能の有効状態
+ * @property {boolean} features.suggestedQuestionsAfterAnswer - 回答後推奨質問機能の有効状態
+ * @property {Array} suggestedQuestions - アプリで設定された推奨質問リスト
+ * @property {string} openingStatement - アプリで設定されたオープニングメッセージ
+ *
+ * **継承プロパティ:**
+ * - Difyクラスのすべてのプロパティを継承
+ * - ChatBaseクラスのすべてのプロパティを継承
+ *
+ * **Chatflow特有の動作:**
+ * - ワークフロー関連イベントの処理 (workflow_started, node_started, node_finished, workflow_finished)
+ * - ノード実行結果の追跡と出力データの収集
+ * - ワークフロー実行IDの管理
+ * - 複数ノードの出力データ統合
+ *
+ * **利用可能なイベント:**
+ * - message: メッセージ
+ * - message_file: ファイル関連メッセージ
+ * - message_replace: メッセージ置換
+ * - tts_message: テキスト音声合成メッセージ
+ * - workflow_started: ワークフロー開始
+ * - node_started: ノード開始
+ * - node_finished: ノード完了
+ * - workflow_finished: ワークフロー完了
+ * - message_end: メッセージ終了
+ *
+ * **レスポンス拡張データ:**
+ * - workflow_run_id: ワークフロー実行ID
+ * - workflow_output: ワークフロー最終出力
+ * - node_outputs: 各ノードの出力データ配列
  */
+
 class Chatflow extends ChatBase {
   constructor(options) {
     super(options);
@@ -1617,13 +1709,45 @@ class Chatflow extends ChatBase {
 
 /**
  * Textgeneratorクラス - Difyテキスト生成機能
- * Textgenerator クライアントを初期化
+ *
+ *Textgenerator クライアントを初期化
  *
  * @param {Object} options - 設定オプション
  * @param {string} options.apiKey - Dify API キー
  * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
  * @param {string} [options.user] - デフォルトユーザー識別子
  * @throws {Error} API キーが未指定の場合
+ *
+ * **Textgenerator特有のプロパティ:**
+ * @property {string} stopEndpoint - 完了メッセージタスク停止用エンドポイント (固定値: "/completion-messages/{taskId}/stop")
+ * 
+ * **継承プロパティ:**
+ * - Difyクラスのすべてのプロパティを継承
+
+ *
+ * **Textgenerator特有の動作:**
+ * - 完了型メッセージ生成 (会話履歴なし)
+ * - テキスト生成に特化したストリーミング解析
+ * - メッセージフィードバック機能
+ * - アプリフィードバック一覧取得
+ *
+ * **利用可能なイベント:**
+ * - message: メッセージ生成
+ * - message_replace: メッセージ置換
+ * - message_end: メッセージ終了
+ * - tts_message: テキスト音声合成メッセージ
+ * - tts_message_end: TTS終了
+ * - ping: 接続維持
+ * - error: エラー
+ *
+ * **レスポンスデータ:**
+ * - message_id: メッセージID
+ * - task_id: タスクID
+ * - status: 実行ステータス
+ * - answer: 生成されたテキスト
+ * - combined_text: 結合されたテキスト
+ * - metadata: メタデータ (使用トークン数等)
+ * - audio: 音声データ (TTS有効時)
  */
 class Textgenerator extends Dify {
   constructor(options) {
@@ -1918,13 +2042,54 @@ class Textgenerator extends Dify {
 
 /**
  * Workflowクラス - Difyワークフロー機能
- * Workflow クライアントを初期化
+ *
+ *Workflow クライアントを初期化
  *
  * @param {Object} options - 設定オプション
  * @param {string} options.apiKey - Dify API キー
  * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
  * @param {string} [options.user] - デフォルトユーザー識別子
  * @throws {Error} API キーが未指定の場合
+ * **継承プロパティ:**
+ * - Difyクラスのすべてのプロパティを継承
+ *
+ * **Workflow特有のプロパティ:**
+ * @property {string} stopEndpoint - ワークフロータスク停止用エンドポイント (固定値: "/workflows/tasks/{taskId}/stop")
+ *
+ * **Workflow特有の動作:**
+ * - ワークフローベースの処理実行 (ノードの順次実行)
+ * - ワークフロー実行ログの管理・取得
+ * - ワークフロー実行詳細の取得
+ * - 複雑なワークフローでのストリーミング処理
+ * - ノード間でのデータ受け渡し管理
+ *
+ * **利用可能なイベント:**
+ * - workflow_started: ワークフロー開始
+ * - text_chunk: テキストチャンク出力
+ * - workflow_finished: ワークフロー完了
+ * - node_started: ノード開始
+ * - node_finished: ノード完了
+ * - tts_message: テキスト音声合成メッセージ
+ * - tts_message_end: TTS終了
+ * - ping: 接続維持
+ * - error: エラー
+ *
+ * **レスポンスデータ:**
+ * - workflow_run_id: ワークフロー実行ID
+ * - task_id: タスクID
+ * - status: 実行ステータス
+ * - workflow_outputs: ワークフロー最終出力
+ * - node_outputs: 各ノードの出力データ配列
+ * - answer: 結合されたテキスト出力
+ * - text_chunks: テキストチャンクの配列
+ * - audio: 音声データ (TTS有効時)
+ * - created_at: 作成日時
+ *
+ * **主要機能:**
+ * - runWorkflow(): ワークフロー実行
+ * - getWorkflowLogs(): ワークフローログ取得
+ * - getWorkflowRunDetail(): ワークフロー実行詳細取得
+ * - stopTask(): ワークフロータスク停止 (継承)
  */
 class Workflow extends Dify {
   constructor(options) {
