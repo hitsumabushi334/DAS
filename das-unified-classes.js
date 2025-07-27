@@ -122,7 +122,7 @@ class Dify {
     console.log("🔍 アプリ情報を取得しています...");
 
     try {
-      const response = this._makeRequest("/parameters", "GET");
+      const response = this._makeRequest("/info", "GET");
       this._setCachedResponse(cacheKey, response);
       console.log("✅ アプリ情報の取得が完了しました");
       return response;
@@ -1106,6 +1106,7 @@ class ChatBase extends Dify {
    */
   _initializeChatFeatures() {
     try {
+      const appSite = this.getWebAppSettings();
       const appParameters = this.getAppParameters();
 
       // チャット固有機能の有効状態を取得

@@ -44,3 +44,13 @@ function textToSpeechExample() {
     throw error;
   }
 }
+
+function testWorkflowProperty(){
+  const workflow = new Workflow({
+    apiKey: PropertiesService.getScriptProperties().getProperty("DIFY_WORKFLOW_API_KEY"),
+    user: "testUser",
+    baseUrl: "https://api.dify.ai/v1",
+  });
+  Logger.log(workflow.fileUpload.image);
+
+}

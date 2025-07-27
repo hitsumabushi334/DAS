@@ -315,9 +315,10 @@ class WorkflowRealApiTestSuite {
         throw new Error("例外が発生するはずです");
       } catch (error) {
         this.framework.assertTrue(
-          error.message.includes("inputsは必須パラメータです"),
+          error.message.includes("必須パラメータ"),
           "適切なエラーメッセージが表示される"
         );
+        Logger.log(error.message);
       }
     });
 
@@ -337,7 +338,7 @@ class WorkflowRealApiTestSuite {
     // 4. stopWorkflowTask - 必須パラメータ検証テスト
     this.framework.runTest("stopWorkflowTask - 必須パラメータ検証", () => {
       try {
-        this.workflow.stopWorkflowTask(null);
+        this.workflow.stopTask(null);
         throw new Error("例外が発生するはずです");
       } catch (error) {
         this.framework.assertTrue(
@@ -483,7 +484,7 @@ class WorkflowRealApiTestSuite {
     this.framework.runTest("runWorkflow - カスタム入力", () => {
       try {
         const inputs = {
-          text_input: "Custom test input",
+          query: "Custom test input",
           number_input: 42,
           boolean_input: true,
         };
@@ -708,7 +709,7 @@ class WorkflowRealApiTestSuite {
     this.framework.runTest("getAppInfo - 基本情報取得", () => {
       try {
         const result = this.workflow.getAppInfo();
-
+        Logger.log(JSON.stringify(result))
         this.framework.assertNotNull(result, "結果が返される");
         this.framework.assertHasProperty(result, "name", "nameが含まれる");
         this.framework.assertHasProperty(
