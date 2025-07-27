@@ -538,41 +538,34 @@ class Dify {
    * @param {Object} [payload] - リクエストペイロード
    * @returns {Object} レスポンスのJSONオブジェクト
    */
-  _makeRequest(endpoint, method = "GET", payload = null) {
+  _makeRequest(endpoint, method, payload) {
+    const HTTP_STATUS = { OK: 200 };
+    const url = this.baseUrl + endpoint;
+
+    // GETリクエストの場合、キャッシュをチェック
+    if (method === "GET") {
+      const cacheKey = url;
+      const cached = this._cache[cacheKey];
+
+      if (cached && Date.now() - cached.timestamp < this._cacheTimeout) {
+        return cached.data;
+      }
+    }
+
     // レート制限チェック
     this._checkRateLimit();
 
-    const url = this.baseUrl + endpoint;
-    const headers = {
-      Authorization: `Bearer ${this.apiKey}`,
-      "Content-Type": "application/json",
-    };
-
-    let options = {
+    const options = {
       method: method,
-      headers: headers,
+      headers: {
+        Authorization: "Bearer " + this.apiKey,
+        "Content-Type": "application/json",
+      },
+      muteHttpExceptions: true,
     };
 
-    // ペイロードの処理
-    if (payload) {
-      if (method === "GET") {
-        // GETリクエストの場合はクエリパラメータとして追加
-        const queryString = this._buildQueryString(payload);
-        if (queryString) {
-          const separator = url.includes("?") ? "&" : "?";
-          options = { ...options, url: url + separator + queryString };
-        }
-      } else if (
-        payload instanceof FormData ||
-        (payload.file && payload.user)
-      ) {
-        // ファイルアップロードの場合
-        delete headers["Content-Type"]; // multipart/form-dataを自動設定させる
-        options.payload = payload;
-      } else {
-        // JSONペイロード
-        options.payload = JSON.stringify(payload);
-      }
+    if (payload && method !== "GET") {
+      options.payload = JSON.stringify(payload);
     }
 
     try {
@@ -580,41 +573,42 @@ class Dify {
       const responseCode = response.getResponseCode();
       const responseText = response.getContentText();
 
-      // ステータスコードチェック
-      if (responseCode === HTTP_STATUS.TOO_MANY_REQUESTS) {
+      if (responseCode < HTTP_STATUS.OK || responseCode >= 300) {
+        let errorInfo;
+        try {
+          errorInfo = JSON.parse(responseText);
+        } catch (e) {
+          errorInfo = { message: responseText };
+        }
+
+        // セキュリティのためAPI keyが含まれる可能性のあるエラーメッセージをサニタイズ
+        const safeErrorMessage = (
+          errorInfo.message ||
+          errorInfo.error ||
+          responseText
+        ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
         throw new Error(
-          "レート制限に達しました。しばらく待ってから再試行してください。"
+          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`
         );
       }
 
-      if (responseCode >= 400) {
-        let errorMessage = `HTTP ${responseCode}: リクエストが失敗しました`;
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // JSON解析エラーは無視
-        }
-        throw new Error(errorMessage);
+      const responseData = JSON.parse(responseText);
+
+      // GETリクエストの結果をキャッシュ
+      if (method === "GET") {
+        const cacheKey = url;
+        this._cache[cacheKey] = {
+          data: responseData,
+          timestamp: Date.now(),
+        };
       }
 
-      // レスポンス解析
-      try {
-        return JSON.parse(responseText);
-      } catch (e) {
-        console.warn("⚠️ JSON解析に失敗しました。生のレスポンスを返します。");
-        return { content: responseText };
-      }
+      return responseData;
     } catch (error) {
-      const sanitizedMessage = error.message.replace(
-        new RegExp(this.apiKey, "g"),
-        "***"
-      );
-      console.error(
-        `❌ リクエストエラー [${method} ${endpoint}]:`,
-        sanitizedMessage
-      );
-      throw new Error(sanitizedMessage);
+      if (error.message.indexOf("API エラー") === 0) {
+        throw error;
+      }
+      throw new Error(`リクエスト実行エラー: ${error.message}`);
     }
   }
 
@@ -786,7 +780,7 @@ class ChatBase extends Dify {
     const payload = {
       inputs: options.inputs || {},
       query: query,
-      response_mode: options.response_mode || "blocking",
+      response_mode: options.response_mode || "streaming",
       user: actualUser,
       conversation_id: options.conversation_id,
       files: options.files || [],
