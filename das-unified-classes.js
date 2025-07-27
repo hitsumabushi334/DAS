@@ -71,7 +71,7 @@ class Dify {
     this.systemParameters = {};
 
     // 初期化処理
-    this._initializeAppFeatures();
+    this._initializeCommonProperties();
   }
 
   /**
@@ -201,51 +201,79 @@ class Dify {
       throw error;
     }
   }
-
   /**
-   * アプリケーション機能を初期化（内部メソッド）
+   * 共通プロパティの初期化（内部メソッド）
+   * userInput、systemParameters、fileUploadの初期化を行う
    *
    * @private
    */
-  _initializeAppFeatures() {
+  _initializeCommonProperties() {
     try {
-      console.log("🔧 アプリケーション機能を初期化しています...");
+      const appParameters = this.getAppParameters();
 
-      // アプリ情報を取得
-      const appInfo = this.getAppInfo();
-
-      // 機能フラグを設定
-      this.features = {
-        file_upload: appInfo.file_upload || false,
-        opening_statement: appInfo.opening_statement || "",
-        suggested_questions: appInfo.suggested_questions || [],
-        speech_to_text: appInfo.speech_to_text || false,
-        text_to_speech: appInfo.text_to_speech || false,
-        retriever_resource: appInfo.retriever_resource || false,
-        annotation_reply: appInfo.annotation_reply || false,
-        user_input_form: appInfo.user_input_form || [],
+      // ユーザー入力フォームの構成の設定も保存
+      this.userInput = {
+        text_input:
+          appParameters.user_input_form.filter((param) => {
+            return param["text-input"] || param.text_input;
+          }) || [],
+        paragraph:
+          appParameters.user_input_form.filter((param) => {
+            return param.paragraph;
+          }) || [],
+        select:
+          appParameters.user_input_form.filter((param) => {
+            return param.select;
+          }) || [],
       };
 
-      // ユーザー入力フォーム設定
-      this.userInput = appInfo.user_input_form || [];
+      // システムパラメータも保存
+      this.systemParameters = appParameters.system_parameters || {};
 
-      // システムパラメータ設定
-      this.systemParameters = {
-        file_size_limit: appInfo.file_size_limit || 50 * 1024 * 1024,
-        file_upload_limit: appInfo.file_upload_limit || 50 * 1024 * 1024,
-        supported_file_types: appInfo.supported_file_types || [],
+      // ファイルアップロード設定
+      this.fileUpload = {
+        image: appParameters.file_upload.image || {},
+        document: appParameters.file_upload.document || {},
+        video: appParameters.file_upload.video || {},
+        audio: appParameters.file_upload.audio || {},
       };
-
-      console.log("✅ アプリケーション機能の初期化が完了しました");
     } catch (error) {
-      console.warn(
-        "⚠️ アプリケーション機能の初期化に失敗しました:",
-        error.message
+      // 初期化時のエラーは警告として記録し、デフォルト値を設定
+      Logger.log(
+        "共通プロパティの初期化中にエラーが発生しました: " + error.message
       );
-      // 初期化エラーは致命的ではないため、デフォルト値で継続
-      this.features = {};
-      this.userInput = [];
-      this.systemParameters = { file_upload_limit: 50 * 1024 * 1024 };
+
+      // デフォルト値を設定
+      this.userInput = {
+        text_input: [],
+        paragraph: [],
+        select: [],
+      };
+      this.systemParameters = {};
+      this.fileUpload = {
+        image: {},
+        document: {},
+        video: {},
+        audio: {},
+      };
+    }
+  }
+
+  /**
+   * ワークフロー系機能の初期化（内部メソッド）
+   * ワークフロー固有の初期化処理（現在は特別な処理なし）
+   *
+   * @private
+   */
+  _initializeWorkflowFeatures() {
+    try {
+      // ワークフロー固有の初期化処理
+      // 現在は特別な処理が不要のため、共通初期化のみで十分
+      Logger.log("ワークフロー系機能の初期化が完了しました");
+    } catch (error) {
+      Logger.log(
+        "ワークフロー系機能の初期化中にエラーが発生しました: " + error.message
+      );
     }
   }
 
@@ -482,10 +510,7 @@ class ChatBase extends Dify {
     };
 
     try {
-      // サブクラス固有のエンドポイント取得
-      const endpoint = this._getMessageEndpoint();
-
-      const response = this._makeRequest(endpoint, "POST", payload);
+      const response = this._makeRequest("/chat-messages", "POST", payload);
 
       // ストリーミングレスポンスの解析（サブクラス固有）
       if (options.response_mode === "streaming") {
@@ -560,35 +585,47 @@ class ChatBase extends Dify {
     }
   }
 
-  // その他のメソッド群も同様に実装...
-
   /**
-   * チャット系機能を初期化（内部メソッド）
+   * チャット系機能の初期化（内部メソッド）
+   * チャット固有のfeatures、suggestedQuestions、openingStatementを初期化
    *
    * @private
    */
   _initializeChatFeatures() {
     try {
-      console.log("🔧 チャット系機能を初期化しています...");
-      console.log("✅ チャット系機能の初期化が完了しました");
+      const appSite = this.getWebAppSettings();
+      const appParameters = this.getAppParameters();
+
+      // チャット固有機能の有効状態を取得
+      this.features = {
+        speechToText:
+          appParameters.speech_to_text && appParameters.speech_to_text.enabled,
+        textToSpeech:
+          appParameters.text_to_speech && appParameters.text_to_speech.enabled,
+        suggestedQuestionsAfterAnswer:
+          appParameters.suggested_questions_after_answer &&
+          appParameters.suggested_questions_after_answer.enabled,
+      };
+
+      // 推奨質問とオープニングメッセージも取得・保存
+      this.suggestedQuestions = appSite.suggested_questions || [];
+      this.openingStatement = appSite.opening_statement || "";
     } catch (error) {
-      console.warn("⚠️ チャット系機能の初期化に失敗しました:", error.message);
+      // 初期化時のエラーは警告として記録し、デフォルト値を設定
+      Logger.log(
+        "チャット系機能の初期化中にエラーが発生しました: " + error.message
+      );
+
+      // デフォルト値を設定
+      this.features = {
+        speechToText: false,
+        textToSpeech: false,
+        suggestedQuestionsAfterAnswer: false,
+      };
+      this.suggestedQuestions = [];
+      this.openingStatement = "";
     }
   }
-
-  /**
-   * メッセージエンドポイントを取得（サブクラスで実装）
-   *
-   * @abstract
-   * @private
-   * @returns {string} API エンドポイント
-   */
-  _getMessageEndpoint() {
-    throw new Error(
-      "_getMessageEndpointメソッドはサブクラスで実装してください"
-    );
-  }
-
   /**
    * ストリーミングレスポンスを解析（サブクラスで実装）
    *
@@ -612,16 +649,6 @@ class ChatBase extends Dify {
  * Chatbotクラス - Difyチャットボット機能
  */
 class Chatbot extends ChatBase {
-  /**
-   * メッセージエンドポイントを取得
-   *
-   * @private
-   * @returns {string} API エンドポイント
-   */
-  _getMessageEndpoint() {
-    return "/chat-messages";
-  }
-
   /**
    * ストリーミングレスポンスを解析（Chatbot特有）
    *
@@ -845,16 +872,6 @@ class Chatbot extends ChatBase {
  * Chatflowクラス - Difyチャットフロー機能
  */
 class Chatflow extends ChatBase {
-  /**
-   * メッセージエンドポイントを取得
-   *
-   * @private
-   * @returns {string} API エンドポイント
-   */
-  _getMessageEndpoint() {
-    return "/chat-messages";
-  }
-
   /**
    * ストリーミングレスポンスを解析（Chatflow特有）
    *
@@ -1181,16 +1198,6 @@ class Textgenerator extends Dify {
   }
 
   /**
-   * テキスト生成特有の機能を初期化
-   *
-   * @private
-   */
-  _initializeTextGeneratorFeatures() {
-    console.log("🔧 テキスト生成機能を初期化しています...");
-    console.log("✅ テキスト生成機能の初期化が完了しました");
-  }
-
-  /**
    * ストリーミングレスポンスを解析
    *
    * @private
@@ -1345,7 +1352,6 @@ class Workflow extends Dify {
    */
   constructor(options) {
     super(options);
-    this._initializeWorkflowFeatures();
   }
 
   /**
@@ -1394,16 +1400,6 @@ class Workflow extends Dify {
   }
 
   /**
-   * ワークフロー特有の機能を初期化
-   *
-   * @private
-   */
-  _initializeWorkflowFeatures() {
-    console.log("🔧 ワークフロー機能を初期化しています...");
-    console.log("✅ ワークフロー機能の初期化が完了しました");
-  }
-
-  /**
    * ストリーミングレスポンスを解析
    *
    * @private
@@ -1411,8 +1407,177 @@ class Workflow extends Dify {
    * @returns {Object} 解析されたレスポンス
    */
   _parseStreamingResponse(response) {
-    console.log("🔄 Workflowストリーミングレスポンスを解析しています...");
-    // Workflow特有の解析ロジック実装
-    return { type: "workflow", response: response };
+    const HTTP_STATUS = { OK: 200 };
+    const responseCode = response.getResponseCode();
+
+    if (responseCode === HTTP_STATUS.OK) {
+      Logger.log("Workflow streaming API call successful");
+
+      const content = response.getContentText();
+      const lines = content.split("\n");
+      let workflowRunId = null;
+      let nodeOutputs = [];
+      let workflowOutput = {};
+      let taskId = null;
+      let status = "";
+      let error = null;
+      let combinedText = "";
+      let textChunks = [];
+      let audio = null;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith("data: ")) {
+          try {
+            const dataStr = line.substring(6);
+
+            // [DONE]チェック
+            if (dataStr.trim() === "[DONE]") {
+              Logger.log("Workflow streaming completed with [DONE] signal");
+              break;
+            }
+
+            const json = JSON.parse(dataStr);
+
+            switch (json.event) {
+              case "workflow_started":
+                Logger.log("workflow_started event received");
+                if (json.workflow_run_id) {
+                  workflowRunId = json.workflow_run_id;
+                }
+                if (json.task_id) {
+                  taskId = json.task_id;
+                }
+                if (json.data && json.data.created_at) {
+                  createdAt = json.data.created_at;
+                }
+                break;
+
+              case "text_chunk":
+                Logger.log("text_chunk event received");
+                if (json.data && json.data.text) {
+                  combinedText += json.data.text;
+                  textChunks.push({
+                    text: json.data.text,
+                    from_variable_selector:
+                      json.data.from_variable_selector || null,
+                  });
+                }
+                break;
+
+              case "workflow_finished":
+                Logger.log("workflow_finished event received");
+                if (json.data) {
+                  workflowOutput = json.data.outputs || {};
+                  error = json.data.error;
+                  status = json.data.status || "succeeded";
+                  // json.data.outputsの詳細ログを追加
+                  if (json.data.outputs) {
+                    Logger.log(
+                      "workflow_finished - json.data.outputs structure: " +
+                        JSON.stringify(json.data.outputs, null, 2)
+                    );
+                  } else {
+                    Logger.log(
+                      "workflow_finished - json.data.outputs is null or undefined"
+                    );
+                  }
+                }
+                break;
+
+              case "node_started":
+                Logger.log(
+                  `node_started event received - Node: ${
+                    json.data?.title || json.data?.node_id
+                  } (${json.data?.node_type})`
+                );
+                break;
+
+              case "node_finished":
+                Logger.log(
+                  `node_finished event received - Node: ${
+                    json.data?.title || json.data?.node_id
+                  } (${json.data?.status})`
+                );
+                // json.data.outputsの詳細ログを追加
+                if (json.data?.outputs) {
+                  Logger.log(
+                    "node_finished - json.data.outputs structure: " +
+                      JSON.stringify(json.data.outputs, null, 2)
+                  );
+                  nodeOutputs.push(json.data.outputs);
+                } else {
+                  Logger.log(
+                    "node_finished - json.data.outputs is null or undefined"
+                  );
+                }
+                break;
+
+              case "tts_message":
+                Logger.log("tts_message event received");
+                if (json.audio) {
+                  const audioBlob = Utilities.newBlob(
+                    Utilities.base64Decode(json.audio),
+                    "audio/mpeg",
+                    "tts_audio.mp3"
+                  );
+                  audio = audioBlob;
+                }
+                break;
+
+              case "tts_message_end":
+                Logger.log("tts_message_end event received");
+                break;
+
+              case "ping":
+                Logger.log("ping event received - connection maintained");
+                break;
+
+              case "error":
+                Logger.log("error event received");
+                error = json.data ? json.data.error : json.message;
+                status = "failed";
+                throw new Error(`ワークフローストリーミングエラー: ${error}`);
+
+              default:
+                Logger.log(`未知のイベント: ${json.event}`);
+                break;
+            }
+          } catch (e) {
+            Logger.log(
+              "Error parsing JSON line: " + line + " - " + e.toString()
+            );
+            // JSONパースエラーは継続処理（部分データの可能性）
+          }
+          // 解析エラーは無視して続行
+        }
+      }
+
+      return {
+        workflow_run_id: workflowRunId,
+        task_id: taskId,
+        status: status,
+        workflow_outputs: workflowOutput,
+        node_outputs: nodeOutputs,
+        error: error,
+        combined_text: combinedText,
+        text_chunks: textChunks,
+        audio: audio,
+      };
+    } else {
+      let errorInfo;
+      try {
+        const responseText = response.getContentText();
+        errorInfo = JSON.parse(responseText);
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
+
+      throw new Error(
+        `ワークフローAPI エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
+        }`
+      );
+    }
   }
 }
