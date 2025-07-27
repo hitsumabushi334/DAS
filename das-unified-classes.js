@@ -201,6 +201,98 @@ class Dify {
       throw error;
     }
   }
+
+  /**
+   * テキストを音声に変換する
+   * @param {Object} options - 変換オプション (必須)
+   * @param {string} [options.text] - 音声生成コンテンツ (任意, message_idが指定されていない場合は必須)
+   * @param {string} [options.message_id] - メッセージID (任意, UUID形式, textより優先)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
+   *
+   * @returns {Blob} 音声ファイル (MP3またはWAV形式)
+   */
+  textToAudio(options, user) {
+    user = user || this.user;
+    if (!options) {
+      throw new Error("optionsは必須パラメータです");
+    }
+    if (!options.text && !options.message_id) {
+      throw new Error("textまたはmessage_idのいずれかは必須パラメータです");
+    }
+
+    const payload = {
+      user: user,
+    };
+
+    if (options.text) {
+      payload.text = options.text;
+    }
+    if (options.message_id) {
+      payload.message_id = options.message_id;
+    }
+
+    const url = this.baseUrl + "/text-to-audio";
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + this.apiKey,
+        "Content-Type": "application/json",
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+    };
+
+    const response = UrlFetchApp.fetch(url, requestOptions);
+    const responseCode = response.getResponseCode();
+
+    if (responseCode !== HTTP_STATUS.OK) {
+      let errorInfo;
+      try {
+        const responseText = response.getContentText();
+        errorInfo = JSON.parse(responseText);
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
+
+      throw new Error(
+        `音声変換エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
+        }`
+      );
+    }
+
+    // レスポンスの音声データをBlobとして返す
+    const contentType = response.getHeaders()["Content-Type"] || "audio/mp3";
+    const audioData = response.getBlob();
+
+    // ファイル名を適切に設定
+    const extension = contentType.includes("wav") ? "wav" : "mp3";
+    const fileName = `audio_${Date.now()}.${extension}`;
+
+    return audioData.setName(fileName);
+  }
+
+  /**
+   * タスクを停止する（汎用メソッド）
+   * @param {string} taskId - タスクID (必須, UUID形式)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   * @returns {Object} 停止結果
+   */
+  stopTask(taskId, user) {
+    user = user || this.user;
+    if (!taskId) {
+      throw new Error("taskIdは必須パラメータです");
+    }
+    
+    if (!this.stopEndpoint) {
+      throw new Error("stopEndpointが設定されていません");
+    }
+    
+    const payload = { user: user };
+    const endpoint = this.stopEndpoint.replace("{taskId}", taskId);
+    return this._makeRequest(endpoint, "POST", payload);
+  }
+
   /**
    * 共通プロパティの初期化（内部メソッド）
    * userInput、systemParameters、fileUploadの初期化を行う
@@ -473,6 +565,9 @@ class ChatBase extends Dify {
   constructor(options) {
     super(options);
 
+    // stopEndpointを設定
+    this.stopEndpoint = "/chat-messages/{taskId}/stop";
+
     // チャット系特有の初期化処理
     this._initializeChatFeatures();
   }
@@ -527,64 +622,275 @@ class ChatBase extends Dify {
       throw error;
     }
   }
-
-  // 会話管理メソッド群（省略 - chat-base-class.jsと同じ実装）
-  getConversations(user, options = {}) {
-    const actualUser = user || this.user;
-    if (!actualUser) {
-      throw new Error("ユーザー識別子は必須です");
-    }
-
-    console.log(
-      `📋 会話履歴一覧を取得しています... [${this.constructor.name}]`
-    );
-
-    const queryParams = {
-      user: actualUser,
-      first_id: options.first_id,
-      limit: options.limit || 20,
-      pinned: options.pinned,
-    };
-
-    try {
-      const response = this._makeRequest("/conversations", "GET", queryParams);
-      console.log("✅ 会話履歴一覧の取得が完了しました");
-      return response;
-    } catch (error) {
-      console.error("❌ 会話履歴一覧の取得に失敗しました:", error.message);
-      throw error;
-    }
+  /**
+   * アプリケーションのメタ情報を取得する
+   *
+   * @returns {Object} メタ情報
+   */
+  getAppMeta() {
+    return this._makeRequest("/meta", "GET");
   }
 
-  getConversationMessages(conversationId, user, options = {}) {
+  /**
+   * 会話一覧を取得する
+   * @param {string} [user] - ユーザー識別子 (任意)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.last_id] - 最後のメッセージID (任意, ページング用)
+   * @param {number} [options.limit] - 取得件数 (任意, デフォルト: 20)
+   * @param {boolean} [options.pinned] - ピン留めされた会話のみ取得 (任意)
+   *
+   * @returns {Object} 会話一覧 - 以下の構造のJSONオブジェクト
+   */
+  getConversations(user, options) {
+    user = user || this.user;
+    options = options || {};
+
+    const params = { user: user };
+    if (options.last_id) params.last_id = options.last_id;
+    if (options.limit) params.limit = options.limit;
+    if (options.pinned !== undefined) params.pinned = options.pinned;
+
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString
+      ? "/conversations?" + queryString
+      : "/conversations";
+
+    return this._makeRequest(endpoint, "GET");
+  }
+
+  /**
+   * 会話履歴メッセージを取得する
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.first_id] - 最初のメッセージID (任意, ページング用)
+   * @param {number} [options.limit] - 取得件数 (任意, デフォルト: 20)
+   *
+   * @returns {Object} メッセージ履歴 - 以下の構造のJSONオブジェクト
+   */
+  getConversationMessages(conversationId, user, options) {
+    user = user || this.user;
     if (!conversationId) {
-      throw new Error("会話IDは必須です");
+      throw new Error(`conversationIdは必須パラメータです`);
     }
 
-    const actualUser = user || this.user;
-    if (!actualUser) {
-      throw new Error("ユーザー識別子は必須です");
-    }
+    options = options || {};
 
-    console.log(`📄 会話メッセージを取得しています... (ID: ${conversationId})`);
+    const params = { user: user };
+    if (options.first_id) params.first_id = options.first_id;
+    if (options.limit) params.limit = options.limit;
+    params.conversation_id = conversationId;
 
-    const queryParams = {
-      user: actualUser,
-      conversation_id: conversationId,
-      first_id: options.first_id,
-      limit: options.limit || 20,
-    };
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString ? "/messages?" + queryString : "/messages";
 
-    try {
-      const response = this._makeRequest("/messages", "GET", queryParams);
-      console.log("✅ 会話メッセージの取得が完了しました");
-      return response;
-    } catch (error) {
-      console.error("❌ 会話メッセージの取得に失敗しました:", error.message);
-      throw error;
-    }
+    return this._makeRequest(endpoint + queryString, "GET");
   }
 
+  /**
+   * 会話の名前を変更する
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} [name] - 新しい会話名 (任意, 指定しない場合は自動生成)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   * @param {boolean} [autoGenerate] - 自動生成フラグ (任意, nameが未指定の場合にtrue推奨)
+   *
+   * @returns {Object} 更新結果
+   */
+  renameConversation(conversationId, name, user, autoGenerate) {
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
+    }
+
+    const payload = { user: user };
+
+    if (name) {
+      payload.name = name;
+    }
+
+    if (autoGenerate !== undefined) {
+      payload.auto_generate = autoGenerate;
+    }
+
+    return this._makeRequest(
+      "/conversations/" + conversationId + "/name",
+      "POST",
+      payload
+    );
+  }
+
+  /**
+   * 会話を削除する
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   *
+   * @returns {Object} 削除結果
+   */
+  deleteConversation(conversationId, user) {
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
+    }
+
+    const payload = { user: user };
+
+    return this._makeRequest(
+      "/conversations/" + conversationId,
+      "DELETE",
+      payload
+    );
+  }
+  /**
+   * メッセージフィードバックを送信する
+   * @param {string} messageId - メッセージID (必須, UUID形式)
+   * @param {string} rating - 評価 (必須, 'like' または 'dislike')
+   * @param {string} [user] - ユーザー識別子 (任意)
+   * @param {string} [content] - フィードバック内容 (任意)
+   *
+   * @returns {Object} 送信結果
+   */
+  sendFeedback(messageId, rating, user, content) {
+    user = user || this.user;
+    if (!messageId) {
+      throw new Error(`messageIdは必須パラメータです`);
+    }
+    if (!rating) {
+      throw new Error(`ratingは必須パラメータです`);
+    }
+
+    const payload = {
+      user: user,
+      rating: rating,
+    };
+
+    if (content) {
+      payload.content = content;
+    }
+
+    return this._makeRequest(
+      "/messages/" + messageId + "/feedbacks",
+      "POST",
+      payload
+    );
+  }
+
+
+  /**
+   * 音声をテキストに変換する
+   * @param {Blob} file - 音声ファイル (必須)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   *
+   * @returns {Object} 変換されたテキスト
+   */
+  audioToText(file, user) {
+    user = user || this.user;
+    if (!file) {
+      throw new Error(`fileは必須パラメータです`);
+    }
+
+    const formData = {
+      file: file,
+      user: user,
+    };
+
+    const options = {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + this.apiKey,
+      },
+      payload: formData,
+      muteHttpExceptions: true,
+    };
+
+    const response = UrlFetchApp.fetch(
+      this.baseUrl + "/audio-to-text",
+      options
+    );
+    const responseCode = response.getResponseCode();
+
+    if (responseCode !== HTTP_STATUS.OK) {
+      let errorInfo;
+      try {
+        const responseText = response.getContentText();
+        errorInfo = JSON.parse(responseText);
+      } catch (e) {
+        errorInfo = { message: response.getContentText() };
+      }
+
+      throw new Error(
+        `音声変換エラー (HTTP ${responseCode}): ${
+          errorInfo.message || errorInfo.error || "不明なエラー"
+        }`
+      );
+    }
+
+    return JSON.parse(response.getContentText());
+  }
+
+  /**
+   * 推奨質問を取得する
+   * @param {string} messageId - メッセージID (必須, UUID形式)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   *
+   * @returns {Object} 推奨質問リスト
+   */
+  getSuggestedQuestions(messageId, user) {
+    user = user || this.user;
+    if (!messageId) {
+      throw new Error(`messageIdは必須パラメータです`);
+    }
+
+    const params = { user: user };
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString
+      ? "/messages/" + messageId + "/suggested?" + queryString
+      : "/messages/" + messageId + "/suggested";
+
+    return this._makeRequest(endpoint, "GET");
+  }
+
+  /**
+   * アプリフィードバック一覧を取得する
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {number} [options.page] - ページ番号 (任意, デフォルト: 1)
+   * @param {number} [options.limit] - 1ページあたりの件数 (任意, デフォルト: 20)
+   *
+   * @returns {Object} フィードバック一覧
+   */
+  getAppFeedbacks(options) {
+    options = options || {};
+
+    const params = {};
+    if (options.page) params.page = options.page;
+    if (options.limit) params.limit = options.limit;
+
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString ? "/feedbacks?" + queryString : "/feedbacks";
+
+    return this._makeRequest(endpoint, "GET");
+  }
+
+  /**
+   * 会話変数を取得する
+   * @param {string} conversationId - 会話ID (必須, UUID形式)
+   * @param {string} [user] - ユーザー識別子 (任意)
+   *
+   * @returns {Object} 会話変数
+   */
+  getConversationVariables(conversationId, user) {
+    user = user || this.user;
+    if (!conversationId) {
+      throw new Error(`conversationIdは必須パラメータです`);
+    }
+
+    const params = { user: user };
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString
+      ? "/conversations/" + conversationId + "/variables?" + queryString
+      : "/conversations/" + conversationId + "/variables";
+
+    return this._makeRequest(endpoint, "GET");
+  }
   /**
    * チャット系機能の初期化（内部メソッド）
    * チャット固有のfeatures、suggestedQuestions、openingStatementを初期化
@@ -1144,7 +1450,9 @@ class Textgenerator extends Dify {
    */
   constructor(options) {
     super(options);
-    this._initializeTextGeneratorFeatures();
+
+    // stopEndpointを設定
+    this.stopEndpoint = "/completion-messages/{taskId}/stop";
   }
 
   /**
@@ -1195,6 +1503,84 @@ class Textgenerator extends Dify {
       console.error("❌ 完了メッセージ作成に失敗しました:", error.message);
       throw error;
     }
+  }
+  /**
+   * メッセージフィードバックを送信する
+   * @param {string} messageId - メッセージID (必須, UUID形式)
+   * @param {Object} feedback - フィードバック内容 (必須)
+   * @param {string} [feedback.rating] - 評価 ('like', 'dislike', null) (任意)
+   * @param {string} [feedback.content] - フィードバックの具体的な内容 (任意)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
+   *
+   * @returns {Object} フィードバック送信結果
+   * ```json
+   * {
+   *   "result": "success"
+   * }
+   * ```
+   */
+  submitMessageFeedback(messageId, feedback, user) {
+    user = user || this.user;
+    if (!messageId) {
+      throw new Error(`messageIdは必須パラメータです`);
+    }
+    if (!feedback) {
+      throw new Error(`feedbackは必須パラメータです`);
+    }
+
+    const payload = {
+      user: user,
+      rating: feedback.rating || null,
+      content: feedback.content || null,
+    };
+
+    return this._makeRequest(
+      "/messages/" + messageId + "/feedbacks",
+      "POST",
+      payload
+    );
+  }
+
+  /**
+   * アプリのメッセージフィードバック一覧を取得する
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {number} [options.page] - ページ番号 (任意, デフォルト: 1)
+   * @param {number} [options.limit] - 1ページあたりの件数 (任意, デフォルト: 20)
+   *
+   * @returns {Object} フィードバック一覧 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "data": [
+   *     {
+   *       "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "app_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "conversation_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "message_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "rating": "like",
+   *       "content": "フィードバック内容",
+   *       "from_source": "api",
+   *       "from_end_user_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "from_account_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "created_at": "2023-11-07T05:31:56Z",
+   *       "updated_at": "2023-11-07T05:31:56Z"
+   *     }
+   *   ]
+   * }
+   * ```
+   */
+  getAppFeedbacks(options) {
+    options = options || {};
+
+    const params = {};
+    if (options.page) params.page = options.page;
+    if (options.limit) params.limit = options.limit;
+
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString
+      ? "/app/feedbacks?" + queryString
+      : "/app/feedbacks";
+
+    return this._makeRequest(endpoint, "GET");
   }
 
   /**
@@ -1352,6 +1738,9 @@ class Workflow extends Dify {
    */
   constructor(options) {
     super(options);
+
+    // stopEndpointを設定
+    this.stopEndpoint = "/workflows/tasks/{taskId}/stop";
   }
 
   /**
@@ -1398,6 +1787,99 @@ class Workflow extends Dify {
       throw error;
     }
   }
+  /**
+   * ワークフローログを取得する
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.keyword] - 検索するキーワード (任意)
+   * @param {string} [options.status] - 実行ステータス (任意, succeeded, failed, stopped, running)
+   * @param {number} [options.page] - 現在のページ (任意, デフォルト: 1)
+   * @param {number} [options.limit] - 1回のリクエストで返すアイテムの数 (任意, デフォルト: 20)
+   *
+   * @returns {Object} ワークフローログリスト - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "page": 1,
+   *   "limit": 20,
+   *   "total": 50,
+   *   "has_more": true,
+   *   "data": [
+   *     {
+   *       "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *       "workflow_run": {
+   *         "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *         "version": "1.0",
+   *         "status": "succeeded",
+   *         "error": null,
+   *         "elapsed_time": 123,
+   *         "total_tokens": 123,
+   *         "total_steps": 5,
+   *         "created_at": 123,
+   *         "finished_at": 123
+   *       },
+   *       "created_from": "api",
+   *       "created_by_role": "end_user",
+   *       "created_by_account": null,
+   *       "created_by_end_user": {
+   *         "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *         "type": "user",
+   *         "is_anonymous": false,
+   *         "session_id": "session-123"
+   *       },
+   *       "created_at": 123
+   *     }
+   *   ]
+   * }
+   * ```
+   */
+  getWorkflowLogs(options) {
+    options = options || {};
+
+    const params = {};
+
+    if (options.keyword) params.keyword = options.keyword;
+    if (options.status) params.status = options.status;
+    if (options.page) params.page = options.page;
+    if (options.limit) params.limit = options.limit;
+
+    const queryString = this._buildQueryString(params);
+    const endpoint = queryString
+      ? "/workflows/logs?" + queryString
+      : "/workflows/logs";
+
+    return this._makeRequest(endpoint, "GET");
+  }
+
+  /**
+   * ワークフロー実行詳細を取得する
+   * @param {string} workflowRunId - ワークフロー実行ID (必須, UUID形式)
+   *
+   * @returns {Object} ワークフロー実行詳細 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "workflow_id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "status": "succeeded",
+   *   "inputs": "{\"query\": \"Hello World\"}",
+   *   "outputs": {
+   *     "result": "処理結果"
+   *   },
+   *   "error": null,
+   *   "total_steps": 5,
+   *   "total_tokens": 123,
+   *   "created_at": 123,
+   *   "finished_at": 123,
+   *   "elapsed_time": 12.5
+   * }
+   * ```
+   */
+  getWorkflowRunDetail(workflowRunId) {
+    if (!workflowRunId) {
+      throw new Error(`workflowRunIdは必須パラメータです`);
+    }
+
+    return this._makeRequest("/workflows/run/" + workflowRunId, "GET");
+  }
+
 
   /**
    * ストリーミングレスポンスを解析
