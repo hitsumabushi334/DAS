@@ -36,15 +36,16 @@ const HTTP_STATUS = {
  * - エラーハンドリング
  * - HTTP リクエスト処理
  */
+/**
+ * Dify API クライアントを初期化
+ *
+ * @param {Object} options - 設定オプション
+ * @param {string} options.apiKey - Dify API キー
+ * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
+ * @param {string} [options.user] - デフォルトユーザー識別子
+ * @throws {Error} API キーが未指定の場合
+ */
 class Dify {
-  /**
-   * Dify API クライアントを初期化
-   *
-   * @param {Object} options - 設定オプション
-   * @param {string} options.apiKey - Dify API キー
-   * @param {string} [options.baseUrl] - API ベース URL
-   * @param {string} [options.user] - デフォルトユーザー識別子
-   */
   constructor(options) {
     // 必須パラメータの検証
     if (!options || !options.apiKey) {
@@ -77,7 +78,19 @@ class Dify {
   /**
    * アプリケーション基本情報を取得
    *
-   * @returns {Object} アプリケーション情報のJSONオブジェクト
+   * @returns {Object} アプリケーション情報のJSONオブジェクト - 以下の構造
+   * ```json
+   * {
+   *   "name": "アプリケーション名",
+   *   "description": "アプリケーションの説明",
+   *   "tags": ["タグ1", "タグ2"]
+   * }
+   * ```
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const dify = new Dify({ apiKey: "your-api-key" });
+   * const appInfo = dify.getAppInfo();
+   * console.log(appInfo.name);
    */
   getAppInfo() {
     const cacheKey = "app-info";
@@ -103,7 +116,40 @@ class Dify {
   /**
    * アプリケーションのパラメータ情報を取得
    *
-   * @returns {Object} パラメータ情報のJSONオブジェクト
+   * @returns {Object} パラメータ情報のJSONオブジェクト - 以下の構造
+   * ```json
+   * {
+   *   "user_input_form": [
+   *     {
+   *       "text-input": {
+   *         "label": "変数表示ラベル名",
+   *         "variable": "変数ID",
+   *         "required": true,
+   *         "default": "デフォルト値"
+   *       }
+   *     }
+   *   ],
+   *   "file_upload": {
+   *     "image": {
+   *       "enabled": true,
+   *       "number_limits": 3,
+   *       "detail": "高解像度",
+   *       "transfer_methods": ["remote_url", "local_file"]
+   *     }
+   *   },
+   *   "system_parameters": {
+   *     "file_size_limit": 50,
+   *     "image_file_size_limit": 10,
+   *     "audio_file_size_limit": 50,
+   *     "video_file_size_limit": 100
+   *   }
+   * }
+   * ```
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const dify = new Dify({ apiKey: "your-api-key" });
+   * const params = dify.getAppParameters();
+   * console.log(params.file_upload.image.enabled);
    */
   getAppParameters() {
     const cacheKey = "app-parameters";
@@ -129,7 +175,27 @@ class Dify {
   /**
    * WebApp設定を取得
    *
-   * @returns {Object} WebApp設定情報のJSONオブジェクト
+   * @returns {Object} WebApp設定情報のJSONオブジェクト - 以下の構造
+   * ```json
+   * {
+   *   "title": "WebApp名",
+   *   "icon_type": "emoji",
+   *   "icon": "🤖",
+   *   "icon_background": "#FFFFFF",
+   *   "icon_url": "https://example.com/icon.png",
+   *   "description": "説明",
+   *   "copyright": "著作権情報",
+   *   "privacy_policy": "プライバシーポリシーのリンク",
+   *   "custom_disclaimer": "カスタム免責事項",
+   *   "default_language": "ja-JP",
+   *   "show_workflow_steps": true
+   * }
+   * ```
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const dify = new Dify({ apiKey: "your-api-key" });
+   * const settings = dify.getWebAppSettings();
+   * console.log(settings.title);
    */
   getWebAppSettings() {
     const cacheKey = "webapp-settings";
@@ -155,9 +221,30 @@ class Dify {
   /**
    * ファイルをアップロード
    *
-   * @param {Blob} file - アップロードするファイル
-   * @param {string} [user] - ユーザー識別子
-   * @returns {Object} アップロード結果のJSONオブジェクト
+   * @param {Blob} file - アップロードするファイル (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
+   *
+   * @returns {Object} アップロード結果のJSONオブジェクト - 以下の構造
+   * ```json
+   * {
+   *   "id": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+   *   "name": "example.pdf",
+   *   "size": 1048576,
+   *   "extension": "pdf",
+   *   "mime_type": "application/pdf",
+   *   "created_by": "user-id",
+   *   "created_at": 1705395332
+   * }
+   * ```
+   * @throws {Error} ファイルが未指定の場合
+   * @throws {Error} ユーザー識別子が未指定の場合
+   * @throws {Error} ファイルサイズが制限を超えている場合
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const dify = new Dify({ apiKey: "your-api-key", user: "user-123" });
+   * const file = DriveApp.getFilesByName("example.pdf").next().getBlob();
+   * const result = dify.uploadFile(file);
+   * console.log(result.id);
    */
   uploadFile(file, user) {
     // パラメータ検証
@@ -209,7 +296,22 @@ class Dify {
    * @param {string} [options.message_id] - メッセージID (任意, UUID形式, textより優先)
    * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
    *
-   * @returns {Blob} 音声ファイル (MP3またはWAV形式)
+   * @returns {Blob} 音声ファイル (MP3またはWAV形式) - ファイル名は自動設定されます
+   * @throws {Error} optionsが未指定の場合
+   * @throws {Error} textまたはmessage_idが両方とも未指定の場合
+   * @throws {Error} API リクエストが失敗した場合
+   * @example
+   * const dify = new Dify({ apiKey: "your-api-key", user: "user-123" });
+   *
+   * // テキストから音声を生成
+   * const audioBlob = dify.textToAudio({
+   *   text: "こんにちは、これは音声合成のテストです。"
+   * });
+   *
+   * // メッセージIDから音声を生成
+   * const audioFromMessage = dify.textToAudio({
+   *   message_id: "3c90c3cc-0d44-4b50-8888-8dd25736052a"
+   * });
    */
   textToAudio(options, user) {
     user = user || this.user;
@@ -275,19 +377,32 @@ class Dify {
   /**
    * タスクを停止する（汎用メソッド）
    * @param {string} taskId - タスクID (必須, UUID形式)
-   * @param {string} [user] - ユーザー識別子 (任意)
-   * @returns {Object} 停止結果
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
+   *
+   * @returns {Object} 停止結果 - 以下の構造のJSONオブジェクト
+   * ```json
+   * {
+   *   "result": "success"
+   * }
+   * ```
+   * @throws {Error} taskIdが未指定の場合
+   * @throws {Error} stopEndpointが設定されていない場合
+   * @throws {Error} API リクエストが失敗した場合
+   * @example
+   * const dify = new Dify({ apiKey: "your-api-key", user: "user-123" });
+   * const result = dify.stopTask("3c90c3cc-0d44-4b50-8888-8dd25736052a");
+   * console.log(result.result); // "success"
    */
   stopTask(taskId, user) {
     user = user || this.user;
     if (!taskId) {
       throw new Error("taskIdは必須パラメータです");
     }
-    
+
     if (!this.stopEndpoint) {
       throw new Error("stopEndpointが設定されていません");
     }
-    
+
     const payload = { user: user };
     const endpoint = this.stopEndpoint.replace("{taskId}", taskId);
     return this._makeRequest(endpoint, "POST", payload);
@@ -307,7 +422,7 @@ class Dify {
       this.userInput = {
         text_input:
           appParameters.user_input_form.filter((param) => {
-            return param["text-input"] || param.text_input;
+            return param.text_input;
           }) || [],
         paragraph:
           appParameters.user_input_form.filter((param) => {
@@ -352,20 +467,46 @@ class Dify {
   }
 
   /**
-   * ワークフロー系機能の初期化（内部メソッド）
-   * ワークフロー固有の初期化処理（現在は特別な処理なし）
+   * 共通リクエスト処理メソッド - 全クラス共通のリクエスト送信とログ処理
    *
-   * @private
+   * @protected
+   * @param {string} endpoint - APIエンドポイント (必須, 例: "/chat-messages")
+   * @param {Object} payload - リクエストペイロード (必須)
+   * @param {Object} [options] - オプション設定 (任意)
+   * @param {string} [options.response_mode] - 応答モード ("streaming" または "blocking")
+   * @param {string} [operationName] - 操作名（ログ用, デフォルト: "リクエスト"）
+   *
+   * @returns {Object} APIレスポンス - ストリーミング解析済みまたはJSON形式
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * // サブクラスでの使用例
+   * const payload = { query: "Hello", user: "user-123" };
+   * const response = this._sendRequest("/chat-messages", payload, { response_mode: "blocking" }, "メッセージ送信");
    */
-  _initializeWorkflowFeatures() {
+  _sendRequest(endpoint, payload, options = {}, operationName = "リクエスト") {
+    console.log(
+      `🚀 ${operationName}を送信しています... [${this.constructor.name}]`
+    );
+
     try {
-      // ワークフロー固有の初期化処理
-      // 現在は特別な処理が不要のため、共通初期化のみで十分
-      Logger.log("ワークフロー系機能の初期化が完了しました");
+      const response = this._makeRequest(endpoint, "POST", payload);
+
+      // ストリーミングレスポンスの解析（サブクラス固有）
+      if (
+        options.response_mode === "streaming" &&
+        this._parseStreamingResponse
+      ) {
+        return this._parseStreamingResponse(response);
+      }
+
+      console.log(`✅ ${operationName}が完了しました`);
+      return response;
     } catch (error) {
-      Logger.log(
-        "ワークフロー系機能の初期化中にエラーが発生しました: " + error.message
+      console.error(
+        `❌ ${operationName}に失敗しました [${this.constructor.name}]:`,
+        error.message
       );
+      throw error;
     }
   }
 
@@ -552,16 +693,15 @@ class Dify {
  * - 音声変換機能
  * - 推奨質問取得
  * - Template Method パターンによるsendMessage統合
+ * ChatBase クライアントを初期化
+ *
+ * @param {Object} options - 設定オプション
+ * @param {string} options.apiKey - Dify API キー
+ * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
+ * @param {string} [options.user] - デフォルトユーザー識別子
+ * @throws {Error} API キーが未指定の場合
  */
 class ChatBase extends Dify {
-  /**
-   * ChatBase クライアントを初期化
-   *
-   * @param {Object} options - 設定オプション
-   * @param {string} options.apiKey - Dify API キー
-   * @param {string} [options.baseUrl] - API ベース URL
-   * @param {string} [options.user] - デフォルトユーザー識別子
-   */
   constructor(options) {
     super(options);
 
@@ -573,12 +713,33 @@ class ChatBase extends Dify {
   }
 
   /**
-   * メッセージを送信（Template Method パターン）
+   * メッセージを送信（Template Method パターン）- ChatbotとChatflow共通メソッド
    *
-   * @param {string} query - ユーザー入力/質問内容
-   * @param {string} [user] - ユーザー識別子
-   * @param {Object} [options] - オプションパラメータ
-   * @returns {Object} 応答結果のJSONオブジェクト
+   * @param {string} query - ユーザー入力/質問内容 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {Object} [options.inputs] - アプリで定義された変数値の入力 (任意)
+   * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'blocking')
+   * @param {string} [options.conversation_id] - 会話ID (任意, UUID形式)
+   * @param {Array} [options.files] - ファイルリスト (任意)
+   * @param {boolean} [options.auto_generate_name] - 自動名前生成フラグ (任意, デフォルト: true)
+   *
+   * @returns {Object} 応答結果のJSONオブジェクト - 応答モードによって構造が異なる
+   * @throws {Error} クエリが未指定または非文字列の場合
+   * @throws {Error} ユーザー識別子が未指定の場合
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const chatbot = new Chatbot({ apiKey: "your-api-key", user: "user-123" });
+   *
+   * // 基本的なメッセージ送信
+   * const response = chatbot.sendMessage("こんにちは");
+   *
+   * // オプション付きメッセージ送信
+   * const response2 = chatbot.sendMessage("質問です", "user-456", {
+   *   response_mode: "streaming",
+   *   conversation_id: "conv-123",
+   *   inputs: { variable1: "value1" }
+   * });
    */
   sendMessage(query, user, options = {}) {
     // 共通バリデーション
@@ -591,9 +752,7 @@ class ChatBase extends Dify {
       throw new Error("ユーザー識別子は必須です");
     }
 
-    console.log(`💬 メッセージを送信しています... [${this.constructor.name}]`);
-
-    // ペイロード構築（共通部分）
+    // ペイロード構築
     const payload = {
       inputs: options.inputs || {},
       query: query,
@@ -604,28 +763,23 @@ class ChatBase extends Dify {
       auto_generate_name: options.auto_generate_name !== false,
     };
 
-    try {
-      const response = this._makeRequest("/chat-messages", "POST", payload);
-
-      // ストリーミングレスポンスの解析（サブクラス固有）
-      if (options.response_mode === "streaming") {
-        return this._parseStreamingResponse(response);
-      }
-
-      console.log("✅ メッセージ送信が完了しました");
-      return response;
-    } catch (error) {
-      console.error(
-        `❌ メッセージ送信に失敗しました [${this.constructor.name}]:`,
-        error.message
-      );
-      throw error;
-    }
+    // 共通リクエスト処理を使用
+    return this._sendRequest(
+      "/chat-messages",
+      payload,
+      options,
+      "メッセージ送信"
+    );
   }
   /**
    * アプリケーションのメタ情報を取得する
    *
-   * @returns {Object} メタ情報
+   * @returns {Object} メタ情報 - アプリケーションのメタデータを含むJSONオブジェクト
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const chatbot = new Chatbot({ apiKey: "your-api-key", user: "user-123" });
+   * const meta = chatbot.getAppMeta();
+   * console.log(meta);
    */
   getAppMeta() {
     return this._makeRequest("/meta", "GET");
@@ -773,7 +927,6 @@ class ChatBase extends Dify {
       payload
     );
   }
-
 
   /**
    * 音声をテキストに変換する
@@ -932,6 +1085,7 @@ class ChatBase extends Dify {
       this.openingStatement = "";
     }
   }
+
   /**
    * ストリーミングレスポンスを解析（サブクラスで実装）
    *
@@ -953,8 +1107,19 @@ class ChatBase extends Dify {
 
 /**
  * Chatbotクラス - Difyチャットボット機能
+ * Chatbotクライアントを初期化
+ *
+ * @param {Object} options - 設定オプション
+ * @param {string} options.apiKey - Dify API キー
+ * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
+ * @param {string} [options.user] - デフォルトユーザー識別子
+ * @throws {Error} API キーが未指定の場合
  */
 class Chatbot extends ChatBase {
+  constructor(options) {
+    super(options);
+  }
+
   /**
    * ストリーミングレスポンスを解析（Chatbot特有）
    *
@@ -1176,8 +1341,19 @@ class Chatbot extends ChatBase {
 
 /**
  * Chatflowクラス - Difyチャットフロー機能
+ * Chatflowクライアントを初期化
+ *
+ * @param {Object} options - 設定オプション
+ * @param {string} options.apiKey - Dify API キー
+ * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
+ * @param {string} [options.user] - デフォルトユーザー識別子
+ * @throws {Error} API キーが未指定の場合
  */
 class Chatflow extends ChatBase {
+  constructor(options) {
+    super(options);
+  }
+
   /**
    * ストリーミングレスポンスを解析（Chatflow特有）
    *
@@ -1441,13 +1617,15 @@ class Chatflow extends ChatBase {
 
 /**
  * Textgeneratorクラス - Difyテキスト生成機能
+ * Textgenerator クライアントを初期化
+ *
+ * @param {Object} options - 設定オプション
+ * @param {string} options.apiKey - Dify API キー
+ * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
+ * @param {string} [options.user] - デフォルトユーザー識別子
+ * @throws {Error} API キーが未指定の場合
  */
 class Textgenerator extends Dify {
-  /**
-   * Textgenerator クライアントを初期化
-   *
-   * @param {Object} options - 設定オプション
-   */
   constructor(options) {
     super(options);
 
@@ -1456,12 +1634,34 @@ class Textgenerator extends Dify {
   }
 
   /**
-   * 完了メッセージを作成する
+   * 完了メッセージを作成する - テキスト生成APIの主要メソッド
    *
-   * @param {Object} inputs - アプリで定義された変数値の入力
-   * @param {string} [user] - ユーザー識別子
-   * @param {Object} [options] - オプションパラメータ
-   * @returns {Object} 応答結果のJSONオブジェクト
+   * @param {Object} inputs - アプリで定義された変数値の入力 (必須)
+   * @param {string} inputs.query - 入力テキスト、処理される内容 (必須)
+   * @param {string} [user] - ユーザー識別子 (任意, 未指定時はクラスのuserプロパティを使用)
+   * @param {Object} [options] - オプションパラメータ (任意)
+   * @param {string} [options.response_mode] - 応答モード (任意, 'streaming' または 'blocking', デフォルト: 'streaming')
+   * @param {Array} [options.files] - ファイルリスト (任意)
+   *
+   * @returns {Object} 応答結果のJSONオブジェクト - 応答モードによって構造が異なる
+   * @throws {Error} inputsが未指定またはオブジェクトでない場合
+   * @throws {Error} inputs.queryが未指定または文字列でない場合
+   * @throws {Error} ユーザー識別子が未指定の場合
+   * @throws {Error} APIリクエストが失敗した場合
+   * @example
+   * const textgen = new Textgenerator({ apiKey: "your-api-key", user: "user-123" });
+   *
+   * // 基本的なテキスト生成
+   * const result = textgen.createCompletionMessage({
+   *   query: "天気について教えて"
+   * });
+   *
+   * // ストリーミングモードでのテキスト生成
+   * const streamResult = textgen.createCompletionMessage({
+   *   query: "AIについて説明してください"
+   * }, "user-456", {
+   *   response_mode: "streaming"
+   * });
    */
   createCompletionMessage(inputs, user, options = {}) {
     if (!inputs || typeof inputs !== "object") {
@@ -1477,8 +1677,7 @@ class Textgenerator extends Dify {
       throw new Error("ユーザー識別子は必須です");
     }
 
-    console.log("📝 完了メッセージを作成しています...");
-
+    // ペイロード構築
     const payload = {
       inputs: inputs,
       response_mode: options.response_mode || "streaming",
@@ -1486,23 +1685,13 @@ class Textgenerator extends Dify {
       files: options.files || [],
     };
 
-    try {
-      const response = this._makeRequest(
-        "/completion-messages",
-        "POST",
-        payload
-      );
-
-      if (options.response_mode === "streaming") {
-        return this._parseStreamingResponse(response);
-      }
-
-      console.log("✅ 完了メッセージ作成が完了しました");
-      return response;
-    } catch (error) {
-      console.error("❌ 完了メッセージ作成に失敗しました:", error.message);
-      throw error;
-    }
+    // 共通リクエスト処理を使用
+    return this._sendRequest(
+      "/completion-messages",
+      payload,
+      options,
+      "完了メッセージ作成"
+    );
   }
   /**
    * メッセージフィードバックを送信する
@@ -1729,13 +1918,15 @@ class Textgenerator extends Dify {
 
 /**
  * Workflowクラス - Difyワークフロー機能
+ * Workflow クライアントを初期化
+ *
+ * @param {Object} options - 設定オプション
+ * @param {string} options.apiKey - Dify API キー
+ * @param {string} [options.baseUrl] - API ベース URL (デフォルト: "https://api.dify.ai/v1")
+ * @param {string} [options.user] - デフォルトユーザー識別子
+ * @throws {Error} API キーが未指定の場合
  */
 class Workflow extends Dify {
-  /**
-   * Workflow クライアントを初期化
-   *
-   * @param {Object} options - 設定オプション
-   */
   constructor(options) {
     super(options);
 
@@ -1761,8 +1952,7 @@ class Workflow extends Dify {
       throw new Error("ユーザー識別子は必須です");
     }
 
-    console.log("🔄 ワークフローを実行しています...");
-
+    // ペイロード構築
     const payload = {
       inputs: inputs,
       response_mode: options.response_mode || "streaming",
@@ -1773,19 +1963,13 @@ class Workflow extends Dify {
       payload.files = options.files;
     }
 
-    try {
-      const response = this._makeRequest("/workflows/run", "POST", payload);
-
-      if (options.response_mode === "streaming") {
-        return this._parseStreamingResponse(response);
-      }
-
-      console.log("✅ ワークフロー実行が完了しました");
-      return response;
-    } catch (error) {
-      console.error("❌ ワークフロー実行に失敗しました:", error.message);
-      throw error;
-    }
+    // 共通リクエスト処理を使用
+    return this._sendRequest(
+      "/workflows/run",
+      payload,
+      options,
+      "ワークフロー実行"
+    );
   }
   /**
    * ワークフローログを取得する
@@ -1880,7 +2064,6 @@ class Workflow extends Dify {
     return this._makeRequest("/workflows/run/" + workflowRunId, "GET");
   }
 
-
   /**
    * ストリーミングレスポンスを解析
    *
@@ -1903,9 +2086,10 @@ class Workflow extends Dify {
       let taskId = null;
       let status = "";
       let error = null;
-      let combinedText = "";
+      let answer = "";
       let textChunks = [];
       let audio = null;
+      let createdAt = null;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -1938,7 +2122,7 @@ class Workflow extends Dify {
               case "text_chunk":
                 Logger.log("text_chunk event received");
                 if (json.data && json.data.text) {
-                  combinedText += json.data.text;
+                  answer += json.data.text;
                   textChunks.push({
                     text: json.data.text,
                     from_variable_selector:
@@ -2042,9 +2226,10 @@ class Workflow extends Dify {
         workflow_outputs: workflowOutput,
         node_outputs: nodeOutputs,
         error: error,
-        combined_text: combinedText,
+        answer: answer,
         text_chunks: textChunks,
         audio: audio,
+        created_at: createdAt,
       };
     } else {
       let errorInfo;
