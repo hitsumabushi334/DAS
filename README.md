@@ -45,11 +45,12 @@ DAS（Dify Application Script）は、Google Apps Script 環境で Dify API の�
 4. コピーしたコードを貼り付けて保存
 
 または
-![alt text](image.png)
 
 1. ライブラリ → スクリプト ID に
    ｢1vW0EQgkUCumnBv_xm26tSbvyq3edv2SxCAoafMfWbCrgD42BPssps_3M｣を入力し検索
 2. ID を使いやすい名前(例：DAS)に変更して追加。
+
+![alt text](image.png)
 
 ### 3. API キーの設定
 
