@@ -39,15 +39,18 @@ DAS（Dify Application Script）は、Google Apps Script 環境で Dify API の�
 
 ### 2. DAS ライブラリのコード追加
 
+2-1
+
 1. `das-unified-classes.js` の内容をコピー
 2. Apps Script エディタで「ファイル」→「新規」→「スクリプト」
 3. `das-unified-classes.js` にリネーム
 4. コピーしたコードを貼り付けて保存
 
 または
+2-2. (推奨)
 
 1. ライブラリ → スクリプト ID に
-   ｢1vW0EQgkUCumnBv_xm26tSbvyq3edv2SxCAoafMfWbCrgD42BPssps_3M｣を入力し検索
+   ｢1oCUfyTJyUe2YMGtbns7VXn78b7mjcaVq6XMyS6jaFE4KIEKqTHbew5rT｣を入力し検索
 2. ID を使いやすい名前(例：DAS)に変更して追加。
 
 ![alt text](image.png)
@@ -82,6 +85,43 @@ function setupApiKeys() {
 ```javascript
 // Chatbot
 const chatbot = new Chatbot({
+  apiKey: PropertiesService.getScriptProperties().getProperty(
+    "DIFY_CHATBOT_API_KEY"
+  ),
+  user: "user-123",
+  baseUrl: "https://api.dify.ai/v1", // オプション
+});
+
+// Chatflow
+const chatflow = new Chatflow({
+  apiKey: PropertiesService.getScriptProperties().getProperty(
+    "DIFY_CHATFLOW_API_KEY"
+  ),
+  user: "user-123",
+});
+
+// Workflow
+const workflow = new Workflow({
+  apiKey: PropertiesService.getScriptProperties().getProperty(
+    "DIFY_WORKFLOW_API_KEY"
+  ),
+  user: "user-123",
+});
+
+// TextGenerator
+const textGenerator = new Textgenerator({
+  apiKey: PropertiesService.getScriptProperties().getProperty(
+    "DIFY_TEXTGEN_API_KEY"
+  ),
+  user: "user-123",
+});
+```
+
+ライブラリの場合、
+
+```Javascript
+// Chatbot
+const chatbot = DAS.getChatBOt({
   apiKey: PropertiesService.getScriptProperties().getProperty(
     "DIFY_CHATBOT_API_KEY"
   ),
