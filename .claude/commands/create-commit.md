@@ -7,8 +7,8 @@ description: gitコミットの作成
 
 ## 実行手順
 
-1. Read @~/.claude/commands/guideline-read-code.md
-2. 違反があれば作業を中断
+1. /codeReview を実行してコードのレビューを行う
+2. 問題があれば作業を中断
 3. `git status`でファイルを確認
 4. [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)に従ってコミットを実行
 

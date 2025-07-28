@@ -1,78 +1,31 @@
-# DAS プロジェクト - Claude Code 設定
+# Claude Code Spec-Driven Development
 
-## 目次
+Kiro-style Spec Driven Development implementation using claude code slash commands, hooks and agents.
 
-- [プロジェクト概要](#プロジェクト概要)
-- [開発環境・ツール](#開発環境ツール)
-- [基本ルール](#基本ルール)
-- [作業フロー](#作業フロー)
-- [参照情報](#参照情報)
+## Basic Rules
 
-## プロジェクト概要
+### Interaction rules
 
-**DAS (Dify Application Script)**
+- Create a work plan and todo list before starting a task, and start work after user confirmation (using human-in-the-loop tool)
+  Example
+  Work Policy: "Work Policy" Todo 1.
+  Todo 1. "Specific task 1"\n 2. "Specific task 2"\n 3. "Specific task 3"
+- Check with users if anything is unclear (use human-in-the-loop tool)
+- Use web search if necessary
+- Whenever modifying or changing a feature, design it before implementation.
+- Whenever modifying or changing a feature, design and implement the feature before implementation.
 
-Google Apps Script（GAS）から Dify API を簡単に呼び出すためのライブラリプロジェクト
+### Development Principles
 
-## 開発環境・ツール
+1. **YAGNI**: Do not implement features that may not be used in the future. 2.
+2. **DRY**: Always make duplicated code into functions or modules. 3.
+   **KISS**: Prefer simple solutions to complex solutions 4.
+   **KISS**: Do not do anything other than what you are told to do, and do not implement anything unnecessary.
+   **_ Translated with www.DeepL.com/Translator (free version) _**
 
-### 開発コマンド
+### Work Reporting Rules
 
-```bash
-clasp push    # Google Cloudに反映
-clasp pull    # Cloudから取得
-clasp open    # Apps Scriptエディタで開く
-clasp create [scriptTitle] # 新しい Apps Script プロジェクトを作成する
-```
-
-## 基本ルール
-
-### 対話ルール
-
-- 常に日本語で応答する
-- タスク開始前に作業方針および Todo リストを作成し、ユーザー確認後に作業開始（human-in-the-loop ツール使用）
-  例:
-  作業方針:｢作業方針｣
-  Todo 1. "具体的な作業 1"\n 2. "具体的な作業 2"\n 3. "具体的な作業 3"
-- 不明な点があればユーザーに確認する（human-in-the-loop ツール使用）
-- 必要に応じて Web 検索を活用する
-- 機能の修正や変更の際は必ず設計を行ってから実装する
-- 指示内容について現在の状況から作業の必要性を論理的に判断してから作業する
-
-### 開発原則
-
-1. **YAGNI**: 将来使うかも知れない機能は実装しない
-2. **DRY**: 重複コードは必ず関数化、モジュール化する
-3. **KISS**: 複雑な解決策よりシンプルな解決策を優先
-4. 指示されたこと以外の作業は行なわず、余計なものを実装しない
-
-### コードレビュー規則
-
-コードレビューの依頼がされた場合、必ず日本語でレビューすること
-
-## 作業フロー
-
-### 実装作業フロー
-
-実装前に以下の段階を踏み、ファイルは/specs に作成すること
-
-1. 要件定義（目的・機能・制約を明確化）(要件定義書.md)
-2. 設計 (要件定義を基にアーキテクチャ、コンポーネント、インターフェース、データモデル、エラーハンドリングの観点で設計)(設計書.md)
-3. 作業計画（実装する際のタスクリスト、手順・ファイル・テスト方法を明確化）(タスクリスト.md)
-
-### subAgent 使用ルール
-
-以下のサブエージェントを対応する使用場面に応じて利用すること：
-
-- **requirements-analyst**: 要件定義を行う際に使用
-- **system-design-architect**: 設計段階で使用
-- **task-list-generator**: 実装のタスクリストを作成する際に使用
-- **task-plan-executor**: タスクリストを基に実装作業を行う際に使用
-- **research-specialist**: 不明点について調査するときやコードを解析して情報を得るときに使用
-
-### 作業報告規則
-
-作業完了時は、以下の形式で実施した作業項目を番号付きリストで報告する。
+Upon completion of the work, a numbered list of work items performed shall be reported in the following format.
 
 ```
 ---
@@ -86,9 +39,85 @@ clasp create [scriptTitle] # 新しい Apps Script プロジェクトを作成�
 
 ```
 
-## 参照情報
+### Code Review Rules
 
-- **要件定義**: @specs/要件定義書.md
-- **設計書**: @specs/設計書.md
-- **タスク管理**: @specs/タスクリスト.md
-- **API リファレンス**: @dify-api
+When a request for code review is made, the review must be conducted in Japanese.
+
+## Project Context
+
+### Paths
+
+- Steering: `.kiro/steering/`
+- Specs: `.kiro/specs/`
+- Commands: `.claude/commands/`
+
+### Steering vs Specification
+
+**Steering** (`.kiro/steering/`) - Guide AI with project-wide rules and context  
+**Specs** (`.kiro/specs/`) - Formalize development process for individual features
+
+### Active Specifications
+
+- Check `.kiro/specs/` for active specifications
+- Use `/kiro:spec-status [feature-name]` to check progress
+
+## Development Guidelines
+
+- Think in English, but generate responses in Japanese (思考は英語、回答の生成は日本語で行うように)
+
+## Workflow
+
+### Phase 0: Steering (Optional)
+
+`/kiro:steering` - Create/update steering documents
+`/kiro:steering-custom` - Create custom steering for specialized contexts
+
+**Note**: Optional for new features or small additions. Can proceed directly to spec-init.
+
+### Phase 1: Specification Creation
+
+1. `/kiro:spec-init [detailed description]` - Initialize spec with detailed project description
+2. `/kiro:spec-requirements [feature]` - Generate requirements document
+3. `/kiro:spec-design [feature]` - Interactive: "requirements.md をレビューしましたか？ [y/N]"
+4. `/kiro:spec-tasks [feature]` - Interactive: Confirms both requirements and design review
+
+### Phase 2: Progress Tracking
+
+`/kiro:spec-status [feature]` - Check current progress and phases
+
+## Development Rules
+
+1. **Consider steering**: Run `/kiro:steering` before major development (optional for new features)
+2. **Follow 3-phase approval workflow**: Requirements → Design → Tasks → Implementation
+3. **Approval required**: Each phase requires human review (interactive prompt or manual)
+4. **No skipping phases**: Design requires approved requirements; Tasks require approved design
+5. **Update task status**: Mark tasks as completed when working on them
+6. **Keep steering current**: Run `/kiro:steering` after significant changes
+7. **Check spec compliance**: Use `/kiro:spec-status` to verify alignment
+
+## Steering Configuration
+
+### Current Steering Files
+
+Managed by `/kiro:steering` command. Updates here reflect command changes.
+
+### Active Steering Files
+
+- `product.md`: Always included - Product context and business objectives
+- `tech.md`: Always included - Technology stack and architectural decisions
+- `structure.md`: Always included - File organization and code patterns
+
+### Custom Steering Files
+
+<!-- Added by /kiro:steering-custom command -->
+<!-- Format:
+- `filename.md`: Mode - Pattern(s) - Description
+  Mode: Always|Conditional|Manual
+  Pattern: File patterns for Conditional mode
+-->
+
+### Inclusion Modes
+
+- **Always**: Loaded in every interaction (default)
+- **Conditional**: Loaded for specific file patterns (e.g., `"*.test.js"`)
+- **Manual**: Reference with `@filename.md` syntax
