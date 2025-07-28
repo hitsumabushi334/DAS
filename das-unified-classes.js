@@ -277,7 +277,7 @@ class Dify {
       throw new Error(
         `ファイルサイズが制限を超えています。最大サイズ: ${
           MAX_FILE_SIZE / (1024 * 1024)
-        }MB`
+        }MB`,
       );
     }
 
@@ -306,19 +306,7 @@ class Dify {
       response.getResponseCode() !== HTTP_STATUS.OK &&
       response.getResponseCode() !== HTTP_STATUS.CREATED
     ) {
-      let errorInfo;
-      try {
-        const responseText = response.getContentText();
-        errorInfo = JSON.parse(responseText);
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-
-      throw new Error(
-        `ファイルアップロードエラー (HTTP ${response.getResponseCode()}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
-      );
+      this._handleHttpError(response, "ファイルアップロード");
     }
 
     return JSON.parse(response.getContentText());
@@ -383,19 +371,7 @@ class Dify {
     const responseCode = response.getResponseCode();
 
     if (responseCode !== HTTP_STATUS.OK) {
-      let errorInfo;
-      try {
-        const responseText = response.getContentText();
-        errorInfo = JSON.parse(responseText);
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-
-      throw new Error(
-        `音声変換エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
-      );
+      this._handleHttpError(response, "音声変換");
     }
 
     // レスポンスの音声データをBlobとして返す
@@ -482,7 +458,7 @@ class Dify {
     } catch (error) {
       // 初期化時のエラーは警告として記録し、デフォルト値を設定
       Logger.log(
-        "共通プロパティの初期化中にエラーが発生しました: " + error.message
+        "共通プロパティの初期化中にエラーが発生しました: " + error.message,
       );
 
       // デフォルト値を設定
@@ -520,7 +496,7 @@ class Dify {
    */
   _sendRequest(endpoint, payload, options = {}, operationName = "リクエスト") {
     console.log(
-      `🚀 ${operationName}を送信しています... [${this.constructor.name}]`
+      `🚀 ${operationName}を送信しています... [${this.constructor.name}]`,
     );
 
     try {
@@ -547,7 +523,7 @@ class Dify {
     } catch (error) {
       console.error(
         `❌ ${operationName}に失敗しました [${this.constructor.name}]:`,
-        error.message
+        error.message,
       );
       throw error;
     }
@@ -598,22 +574,7 @@ class Dify {
       const responseText = response.getContentText();
 
       if (responseCode < HTTP_STATUS.OK || responseCode >= 300) {
-        let errorInfo;
-        try {
-          errorInfo = JSON.parse(responseText);
-        } catch (e) {
-          errorInfo = { message: responseText };
-        }
-
-        // セキュリティのためAPI keyが含まれる可能性のあるエラーメッセージをサニタイズ
-        const safeErrorMessage = (
-          errorInfo.message ||
-          errorInfo.error ||
-          responseText
-        ).replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]");
-        throw new Error(
-          `API エラー (HTTP ${responseCode}): ${safeErrorMessage}`
-        );
+        this._handleHttpError(response, "API", true);
       }
 
       const responseData = JSON.parse(responseText);
@@ -646,7 +607,7 @@ class Dify {
 
     // 古いリクエストを削除
     this._rateLimitRequests = this._rateLimitRequests.filter(
-      (timestamp) => now - timestamp < this._rateLimitWindow
+      (timestamp) => now - timestamp < this._rateLimitWindow,
     );
 
     // 制限チェック
@@ -654,7 +615,7 @@ class Dify {
       throw new Error(
         `レート制限に達しました（${this._rateLimitMax}リクエスト/${
           this._rateLimitWindow / 1000
-        }秒）`
+        }秒）`,
       );
     }
 
@@ -678,7 +639,7 @@ class Dify {
     for (const [key, value] of Object.entries(params)) {
       if (value !== null && value !== undefined) {
         queryParts.push(
-          `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+          `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
         );
       }
     }
@@ -713,6 +674,57 @@ class Dify {
       data: data,
       timestamp: Date.now(),
     };
+  }
+
+  /**
+   * APIエラーレスポンス解析共通メソッド
+   * @param {HTTPResponse} response - HTTPレスポンスオブジェクト
+   * @returns {Object} エラー情報オブジェクト {message: string, error?: string}
+   */
+  _parseErrorResponse(response) {
+    let errorInfo;
+    try {
+      const responseText = response.getContentText();
+      errorInfo = JSON.parse(responseText);
+    } catch (e) {
+      errorInfo = { message: response.getContentText() };
+    }
+    return errorInfo;
+  }
+
+  /**
+   * HTTPエラーハンドリング共通メソッド
+   * @param {HTTPResponse} response - HTTPレスポンスオブジェクト
+   * @param {string} context - エラーの文脈（"音声変換", "API", "ストリーミングAPI"等）
+   * @param {boolean} sanitizeApiKey - APIキーをサニタイズするかどうか（デフォルト: false）
+   * @throws {Error} HTTPエラー例外
+   */
+  _handleHttpError(response, context, sanitizeApiKey = false) {
+    const responseCode = response.getResponseCode();
+    const errorInfo = this._parseErrorResponse(response);
+
+    let errorMessage = errorInfo.message || errorInfo.error || "不明なエラー";
+
+    if (sanitizeApiKey) {
+      errorMessage = errorMessage.replace(
+        /Bearer\s+[^\s]+/gi,
+        "Bearer [REDACTED]",
+      );
+    }
+
+    throw new Error(`${context}エラー (HTTP ${responseCode}): ${errorMessage}`);
+  }
+
+  /**
+   * ストリーミングエラーハンドリング共通メソッド
+   * @param {Object} json - ストリーミングイベントのJSONオブジェクト
+   * @param {string} context - エラーの文脈（"", "テキストジェネレーター", "ワークフロー"等）
+   * @throws {Error} ストリーミングエラー例外
+   */
+  _handleStreamingError(json, context = "") {
+    const error = json.data ? json.data.error : json.message || json.code;
+    const prefix = context ? `${context}ストリーミング` : "ストリーミング";
+    throw new Error(`${prefix}エラー: ${error}`);
   }
 }
 
@@ -824,7 +836,7 @@ class ChatBase extends Dify {
       "/chat-messages",
       payload,
       options,
-      "メッセージ送信"
+      "メッセージ送信",
     );
   }
   /**
@@ -925,7 +937,7 @@ class ChatBase extends Dify {
     return this._makeRequest(
       "/conversations/" + conversationId + "/name",
       "POST",
-      payload
+      payload,
     );
   }
 
@@ -947,7 +959,7 @@ class ChatBase extends Dify {
     return this._makeRequest(
       "/conversations/" + conversationId,
       "DELETE",
-      payload
+      payload,
     );
   }
   /**
@@ -980,7 +992,7 @@ class ChatBase extends Dify {
     return this._makeRequest(
       "/messages/" + messageId + "/feedbacks",
       "POST",
-      payload
+      payload,
     );
   }
 
@@ -1013,24 +1025,12 @@ class ChatBase extends Dify {
 
     const response = UrlFetchApp.fetch(
       this.baseUrl + "/audio-to-text",
-      options
+      options,
     );
     const responseCode = response.getResponseCode();
 
     if (responseCode !== HTTP_STATUS.OK) {
-      let errorInfo;
-      try {
-        const responseText = response.getContentText();
-        errorInfo = JSON.parse(responseText);
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-
-      throw new Error(
-        `音声変換エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
-      );
+      this._handleHttpError(response, "音声変換");
     }
 
     return JSON.parse(response.getContentText());
@@ -1127,7 +1127,7 @@ class ChatBase extends Dify {
     } catch (error) {
       // 初期化時のエラーは警告として記録し、デフォルト値を設定
       Logger.log(
-        "チャット系機能の初期化中にエラーが発生しました: " + error.message
+        "チャット系機能の初期化中にエラーが発生しました: " + error.message,
       );
 
       // デフォルト値を設定
@@ -1151,7 +1151,7 @@ class ChatBase extends Dify {
    */
   _parseStreamingResponse(response) {
     throw new Error(
-      "_parseStreamingResponseメソッドはサブクラスで実装してください"
+      "_parseStreamingResponseメソッドはサブクラスで実装してください",
     );
   }
 }
@@ -1291,7 +1291,7 @@ class Chatbot extends ChatBase {
                   const audioBlob = Utilities.newBlob(
                     Utilities.base64Decode(json.audio),
                     "audio/mpeg",
-                    "tts_audio.mp3"
+                    "tts_audio.mp3",
                   );
                   json.audio = audioBlob;
                 }
@@ -1352,7 +1352,7 @@ class Chatbot extends ChatBase {
                 if (json.metadata) {
                   metadata = json.metadata;
                   Logger.log(
-                    "Usage metadata: " + JSON.stringify(json.metadata)
+                    "Usage metadata: " + JSON.stringify(json.metadata),
                   );
                 }
                 return {
@@ -1368,18 +1368,16 @@ class Chatbot extends ChatBase {
                 };
               case "error":
                 Logger.log("Error event: " + JSON.stringify(json));
-                throw new Error(
-                  `ストリーミングエラー: ${json.message || json.code}`
-                );
+                this._handleStreamingError(json);
               default:
                 Logger.log(
-                  "Unknown event: " + json.event + " - " + JSON.stringify(json)
+                  "Unknown event: " + json.event + " - " + JSON.stringify(json),
                 );
                 break;
             }
           } catch (e) {
             Logger.log(
-              "Error parsing JSON line: " + line + " - " + e.toString()
+              "Error parsing JSON line: " + line + " - " + e.toString(),
             );
             // JSONパースエラーは継続処理（部分データの可能性）
             continue;
@@ -1404,19 +1402,9 @@ class Chatbot extends ChatBase {
         "Streaming API error - HTTP " +
           responseCode +
           ": " +
-          response.getContentText()
+          response.getContentText(),
       );
-      let errorInfo;
-      try {
-        errorInfo = JSON.parse(response.getContentText());
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-      throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || response.getContentText()
-        }`
-      );
+      this._handleHttpError(response, "ストリーミングAPI");
     }
   }
 }
@@ -1572,7 +1560,7 @@ class Chatflow extends ChatBase {
                   const audioBlob = Utilities.newBlob(
                     Utilities.base64Decode(json.audio),
                     "audio/mpeg",
-                    "tts_audio.mp3"
+                    "tts_audio.mp3",
                   );
                   json.audio = audioBlob;
                 }
@@ -1619,12 +1607,12 @@ class Chatflow extends ChatBase {
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2),
                   );
                   nodeOutputs.push(json.data.outputs);
                 } else {
                   Logger.log(
-                    "node_finished - json.data.outputs is null or undefined"
+                    "node_finished - json.data.outputs is null or undefined",
                   );
                 }
                 break;
@@ -1640,12 +1628,12 @@ class Chatflow extends ChatBase {
                 if (json.data?.outputs) {
                   Logger.log(
                     "workflow_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2),
                   );
                   workflowOutput = json.data.outputs;
                 } else {
                   Logger.log(
-                    "workflow_finished - json.data.outputs is null or undefined"
+                    "workflow_finished - json.data.outputs is null or undefined",
                   );
                 }
                 break;
@@ -1657,7 +1645,7 @@ class Chatflow extends ChatBase {
                 if (json.metadata) {
                   metadata = json.metadata;
                   Logger.log(
-                    "Usage metadata: " + JSON.stringify(json.metadata)
+                    "Usage metadata: " + JSON.stringify(json.metadata),
                   );
                 }
                 return {
@@ -1676,18 +1664,16 @@ class Chatflow extends ChatBase {
                 };
               case "error":
                 Logger.log("Error event: " + JSON.stringify(json));
-                throw new Error(
-                  `ストリーミングエラー: ${json.message || json.code}`
-                );
+                this._handleStreamingError(json);
               default:
                 Logger.log(
-                  "Unknown event: " + json.event + " - " + JSON.stringify(json)
+                  "Unknown event: " + json.event + " - " + JSON.stringify(json),
                 );
                 break;
             }
           } catch (e) {
             Logger.log(
-              "Error parsing JSON line: " + line + " - " + e.toString()
+              "Error parsing JSON line: " + line + " - " + e.toString(),
             );
             // JSONパースエラーは継続処理（部分データの可能性）
             continue;
@@ -1715,19 +1701,9 @@ class Chatflow extends ChatBase {
         "Streaming API error - HTTP " +
           responseCode +
           ": " +
-          response.getContentText()
+          response.getContentText(),
       );
-      let errorInfo;
-      try {
-        errorInfo = JSON.parse(response.getContentText());
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-      throw new Error(
-        `ストリーミングAPIエラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || response.getContentText()
-        }`
-      );
+      this._handleHttpError(response, "ストリーミングAPI");
     }
   }
 }
@@ -1839,7 +1815,7 @@ class Textgenerator extends Dify {
       "/completion-messages",
       payload,
       options,
-      "完了メッセージ作成"
+      "完了メッセージ作成",
     );
   }
   /**
@@ -1875,7 +1851,7 @@ class Textgenerator extends Dify {
     return this._makeRequest(
       "/messages/" + messageId + "/feedbacks",
       "POST",
-      payload
+      payload,
     );
   }
 
@@ -1955,7 +1931,7 @@ class Textgenerator extends Dify {
             // [DONE]チェック
             if (dataStr.trim() === "[DONE]") {
               Logger.log(
-                "Textgenerator streaming completed with [DONE] signal"
+                "Textgenerator streaming completed with [DONE] signal",
               );
               break;
             }
@@ -2001,7 +1977,7 @@ class Textgenerator extends Dify {
                   const audioBlob = Utilities.newBlob(
                     Utilities.base64Decode(json.audio),
                     "audio/mpeg",
-                    "tts_audio.mp3"
+                    "tts_audio.mp3",
                   );
                   audio = audioBlob;
                 }
@@ -2017,11 +1993,8 @@ class Textgenerator extends Dify {
 
               case "error":
                 Logger.log("error event received");
-                error = json.data ? json.data.error : json.message;
                 status = "failed";
-                throw new Error(
-                  `テキストジェネレーターストリーミングエラー: ${error}`
-                );
+                this._handleStreamingError(json, "テキストジェネレーター");
 
               default:
                 Logger.log(`未知のイベント: ${json.event}`);
@@ -2029,7 +2002,7 @@ class Textgenerator extends Dify {
             }
           } catch (e) {
             Logger.log(
-              "Error parsing JSON line: " + line + " - " + e.toString()
+              "Error parsing JSON line: " + line + " - " + e.toString(),
             );
             // JSONパースエラーは継続処理（部分データの可能性）
           }
@@ -2048,19 +2021,7 @@ class Textgenerator extends Dify {
         audio: audio,
       };
     } else {
-      let errorInfo;
-      try {
-        const responseText = response.getContentText();
-        errorInfo = JSON.parse(responseText);
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-
-      throw new Error(
-        `テキストジェネレーターAPI エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
-      );
+      this._handleHttpError(response, "テキストジェネレーターAPI");
     }
   }
 }
@@ -2158,7 +2119,7 @@ class Workflow extends Dify {
       "/workflows/run",
       payload,
       options,
-      "ワークフロー実行"
+      "ワークフロー実行",
     );
   }
   /**
@@ -2331,11 +2292,11 @@ class Workflow extends Dify {
                   if (json.data.outputs) {
                     Logger.log(
                       "workflow_finished - json.data.outputs structure: " +
-                        JSON.stringify(json.data.outputs, null, 2)
+                        JSON.stringify(json.data.outputs, null, 2),
                     );
                   } else {
                     Logger.log(
-                      "workflow_finished - json.data.outputs is null or undefined"
+                      "workflow_finished - json.data.outputs is null or undefined",
                     );
                   }
                 }
@@ -2345,7 +2306,7 @@ class Workflow extends Dify {
                 Logger.log(
                   `node_started event received - Node: ${
                     json.data?.title || json.data?.node_id
-                  } (${json.data?.node_type})`
+                  } (${json.data?.node_type})`,
                 );
                 break;
 
@@ -2353,18 +2314,18 @@ class Workflow extends Dify {
                 Logger.log(
                   `node_finished event received - Node: ${
                     json.data?.title || json.data?.node_id
-                  } (${json.data?.status})`
+                  } (${json.data?.status})`,
                 );
                 // json.data.outputsの詳細ログを追加
                 if (json.data?.outputs) {
                   Logger.log(
                     "node_finished - json.data.outputs structure: " +
-                      JSON.stringify(json.data.outputs, null, 2)
+                      JSON.stringify(json.data.outputs, null, 2),
                   );
                   nodeOutputs.push(json.data.outputs);
                 } else {
                   Logger.log(
-                    "node_finished - json.data.outputs is null or undefined"
+                    "node_finished - json.data.outputs is null or undefined",
                   );
                 }
                 break;
@@ -2375,7 +2336,7 @@ class Workflow extends Dify {
                   const audioBlob = Utilities.newBlob(
                     Utilities.base64Decode(json.audio),
                     "audio/mpeg",
-                    "tts_audio.mp3"
+                    "tts_audio.mp3",
                   );
                   audio = audioBlob;
                 }
@@ -2391,9 +2352,8 @@ class Workflow extends Dify {
 
               case "error":
                 Logger.log("error event received");
-                error = json.data ? json.data.error : json.message;
                 status = "failed";
-                throw new Error(`ワークフローストリーミングエラー: ${error}`);
+                this._handleStreamingError(json, "ワークフロー");
 
               default:
                 Logger.log(`未知のイベント: ${json.event}`);
@@ -2401,7 +2361,7 @@ class Workflow extends Dify {
             }
           } catch (e) {
             Logger.log(
-              "Error parsing JSON line: " + line + " - " + e.toString()
+              "Error parsing JSON line: " + line + " - " + e.toString(),
             );
             // JSONパースエラーは継続処理（部分データの可能性）
           }
@@ -2422,19 +2382,7 @@ class Workflow extends Dify {
         created_at: createdAt,
       };
     } else {
-      let errorInfo;
-      try {
-        const responseText = response.getContentText();
-        errorInfo = JSON.parse(responseText);
-      } catch (e) {
-        errorInfo = { message: response.getContentText() };
-      }
-
-      throw new Error(
-        `ワークフローAPI エラー (HTTP ${responseCode}): ${
-          errorInfo.message || errorInfo.error || "不明なエラー"
-        }`
-      );
+      this._handleHttpError(response, "ワークフローAPI");
     }
   }
 }
