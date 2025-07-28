@@ -121,7 +121,7 @@ const textGenerator = new Textgenerator({
 
 ```Javascript
 // Chatbot
-const chatbot = DAS.getChatBOt({
+const chatbot = DAS.getChatbot({
   apiKey: PropertiesService.getScriptProperties().getProperty(
     "DIFY_CHATBOT_API_KEY"
   ),
@@ -130,7 +130,7 @@ const chatbot = DAS.getChatBOt({
 });
 
 // Chatflow
-const chatflow = new Chatflow({
+const chatflow = DAS.getChatflow({
   apiKey: PropertiesService.getScriptProperties().getProperty(
     "DIFY_CHATFLOW_API_KEY"
   ),
@@ -138,7 +138,7 @@ const chatflow = new Chatflow({
 });
 
 // Workflow
-const workflow = new Workflow({
+const workflow = DAS.getWorkflow({
   apiKey: PropertiesService.getScriptProperties().getProperty(
     "DIFY_WORKFLOW_API_KEY"
   ),
@@ -146,7 +146,7 @@ const workflow = new Workflow({
 });
 
 // TextGenerator
-const textGenerator = new Textgenerator({
+const textGenerator = DAS.getTextgenerator({
   apiKey: PropertiesService.getScriptProperties().getProperty(
     "DIFY_TEXTGEN_API_KEY"
   ),
