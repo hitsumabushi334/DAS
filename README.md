@@ -338,43 +338,7 @@ function fileUploadExample() {
 }
 ```
 
-## API リファレンス
 
-### 共通メソッド（全クラス）
-
-| メソッド                 | 説明                         | パラメータ                   |
-| ------------------------ | ---------------------------- | ---------------------------- |
-| `getAppInfo()`           | アプリケーション基本情報取得 | なし                         |
-| `getAppParameters()`     | パラメータ情報取得           | なし                         |
-| `getAppMeta()`           | メタ情報取得                 | なし                         |
-| `uploadFile(file, user)` | ファイルアップロード         | `file`: Blob, `user`: string |
-
-### Chatbot / Chatflow 専用メソッド
-
-| メソッド                                     | 説明                | パラメータ                                         |
-| -------------------------------------------- | ------------------- | -------------------------------------------------- |
-| `sendMessage(query, user, options)`          | メッセージ送信      | `query`: string, `user`: string, `options`: object |
-| `getConversations(user, options)`            | 会話一覧取得        | `user`: string, `options`: object                  |
-| `getConversationMessages(id, user, options)` | 会話履歴取得        | `id`: string, `user`: string, `options`: object    |
-| `renameConversation(id, name, user)`         | 会話名変更          | `id`: string, `name`: string, `user`: string       |
-| `deleteConversation(id, user)`               | 会話削除            | `id`: string, `user`: string                       |
-| `audioToText(audioFile)`                     | 音声 → テキスト変換 | `audioFile`: Blob                                  |
-
-### Workflow 専用メソッド
-
-| メソッド                               | 説明             | パラメータ                              |
-| -------------------------------------- | ---------------- | --------------------------------------- |
-| `runWorkflow(data, user)`              | ワークフロー実行 | `data`: object, `user`: string          |
-| `getWorkflowLogs(workflowRunId, user)` | ログ取得         | `workflowRunId`: string, `user`: string |
-| `stopWorkflowTask(taskId, user)`       | タスク停止       | `taskId`: string, `user`: string        |
-
-### TextGenerator 専用メソッド
-
-| メソッド                       | 説明                | パラメータ                       |
-| ------------------------------ | ------------------- | -------------------------------- |
-| `createCompletion(data, user)` | テキスト生成        | `data`: object, `user`: string   |
-| `stopGeneration(taskId, user)` | 生成停止            | `taskId`: string, `user`: string |
-| `textToAudio(options)`         | テキスト → 音声変換 | `options`: object                |
 
 ## 設定とセキュリティ
 
@@ -426,45 +390,51 @@ function getEnvironmentConfig() {
 **原因**: `Dify`クラス（またはそのサブクラス）の初期化時に`apiKey`が提供されていません。
 
 **解決方法**:
-- 各クラス（`Chatbot`, `Chatflow`など）を初期化する際に、必ず有効なAPIキーを渡してください。
+
+- 各クラス（`Chatbot`, `Chatflow`など）を初期化する際に、必ず有効な API キーを渡してください。
 - `PropertiesService`を使用している場合、キー名（例: `"DIFY_CHATBOT_API_KEY"`）が正しいか、またスクリプトプロパティに値が設定されているか確認してください。
 
 ```javascript
 // ✅ 良い例
 const chatbot = new Chatbot({
-  apiKey: PropertiesService.getScriptProperties().getProperty("DIFY_CHATBOT_API_KEY"),
-  user: "test-user"
+  apiKey: PropertiesService.getScriptProperties().getProperty(
+    "DIFY_CHATBOT_API_KEY"
+  ),
+  user: "test-user",
 });
 ```
 
 #### 2. `Error: レート制限に達しました（60リクエスト/60秒）`
 
-**原因**: 短時間にAPIリクエストを送信しすぎて、Dify APIのレート制限（1分あたり60回）に達しました。
+**原因**: 短時間に API リクエストを送信しすぎて、Dify API のレート制限（1 分あたり 60 回）に達しました。
 
 **解決方法**:
-- APIを呼び出す頻度を調整してください。
+
+- API を呼び出す頻度を調整してください。
 - `Utilities.sleep()` を使って、連続するリクエストの間に待機時間を設けることを検討してください。
 
 #### 3. `Error: ファイルサイズが制限を超えています。最大サイズ: 50MB`
 
-**原因**: `uploadFile`メソッドでアップロードしようとしたファイルのサイズが50MBを超えています。
+**原因**: `uploadFile`メソッドでアップロードしようとしたファイルのサイズが 50MB を超えています。
 
 **解決方法**:
-- アップロードするファイルのサイズを50MB未満にしてください。
-- `file.getSize()`メソッドを使って、アップロード前にファイルサイズを確認できます。
+
+- アップロードするファイルのサイズを 50MB 未満にしてください。
+- `file.getBytes().length`メソッドを使って、アップロード前にファイルサイズを確認できます。
 
 #### 4. `Error: ストリーミングエラー: (詳細)` または `ストリーミングAPIエラー (HTTP 4xx/5xx): (詳細)`
 
-**原因**: ストリーミング接続中に問題が発生しました。ネットワークの不安定さや、Dify APIサーバー側の問題が考えられます。
+**原因**: ストリーミング接続中に問題が発生しました。ネットワークの不安定さや、Dify API サーバー側の問題が考えられます。
 
 **解決方法**:
+
 - `response_mode`を `'blocking'` に変更して、問題が解決するか試してください。ストリーミングではなく、一度に全結果を受け取るモードに切り替わります。
 - ネットワーク接続が安定しているか確認してください。
 - 時間を置いてから再度実行してみてください。
 
 ### デバッグ方法
 
-DASライブラリは、実行中の主要なステップで`console.log`または`Logger.log`を使用して詳細なログを出力します。問題が発生した場合は、Apps Scriptの実行ログを確認するのが最も効果的です。
+DAS ライブラリは、実行中の主要なステップで`console.log`または`Logger.log`を使用して詳細なログを出力します。問題が発生した場合は、Apps Script の実行ログを確認するのが最も効果的です。
 
 **エラー詳細の確認方法**:
 
@@ -475,7 +445,7 @@ function testMyFunction() {
   try {
     const chatbot = new Chatbot({
       apiKey: "invalid-key", // わざと間違ったキーを設定
-      user: "test-user"
+      user: "test-user",
     });
     // 何らかの処理
   } catch (error) {
@@ -493,7 +463,7 @@ function testMyFunction() {
 }
 ```
 
-Apps Scriptエディタの「実行ログ」でこれらの出力を確認することで、問題の原因を特定しやすくなります。
+Apps Script エディタの「実行ログ」でこれらの出力を確認することで、問題の原因を特定しやすくなります。
 
 ## 開発者向け情報
 
@@ -508,22 +478,6 @@ DAS-Project/
     ├── mock-tests.js
     ├── real-api-tests.js
     └── ...
-```
-
-### 開発コマンド
-
-```bash
-# プロジェクトのクローン
-clasp clone [scriptId]
-
-# ローカル変更をGASにプッシュ
-clasp push
-
-# GASの変更をローカルにプル
-clasp pull
-
-# GASエディタを開く
-clasp open
 ```
 
 ### コントリビューション
