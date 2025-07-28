@@ -7,6 +7,10 @@ allowed-tools: Bash, Read, Write, Edit, MultiEdit, Update, WebSearch, WebFetch
 
 Create comprehensive technical design for feature: **$ARGUMENTS**
 
+## subagent rule
+
+**MUST BE USED** technical-design-architect
+
 ## Interactive Approval: Requirements Review
 
 **CRITICAL**: Design can only be generated after requirements are reviewed and approved.
