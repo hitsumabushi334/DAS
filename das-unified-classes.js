@@ -1833,7 +1833,7 @@ class Textgenerator extends Dify {
    * }
    * ```
    */
-  submitMessageFeedback(messageId, feedback, user) {
+  sendFeedback(messageId, feedback, user) {
     user = user || this.user;
     if (!messageId) {
       throw new Error(`messageIdは必須パラメータです`);
