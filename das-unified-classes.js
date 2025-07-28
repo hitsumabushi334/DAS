@@ -273,7 +273,7 @@ class Dify {
 
     // ファイルサイズ検証 (50MB制限)
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
-    if (file.getSize && file.getSize() > MAX_FILE_SIZE) {
+    if (file.getBytes().length  && file.getBytes().length > MAX_FILE_SIZE) {
       throw new Error(
         `ファイルサイズが制限を超えています。最大サイズ: ${
           MAX_FILE_SIZE / (1024 * 1024)

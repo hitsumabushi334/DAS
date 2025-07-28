@@ -421,69 +421,79 @@ function getEnvironmentConfig() {
 
 ### よくある問題と解決方法
 
-#### 1. 認証エラー
+#### 1. `Error: API キーは必須です`
 
-```
-Error: 認証に失敗しました (401)
-```
-
-**解決方法**: API キーを確認してください
-
-- PropertiesService で正しく設定されているか確認
-- API キーの有効期限を確認
-- アプリケーション種別と API キーが一致しているか確認
-
-#### 2. レート制限エラー
-
-```
-Error: レート制限に達しました (429)
-```
-
-**解決方法**: 自動リトライ機能が動作しますが、以下も確認
-
-- API 使用量の確認
-- 同時リクエスト数の調整
-
-#### 3. ファイルアップロードエラー
-
-```
-Error: ファイルサイズが上限を超えています
-```
+**原因**: `Dify`クラス（またはそのサブクラス）の初期化時に`apiKey`が提供されていません。
 
 **解決方法**:
+- 各クラス（`Chatbot`, `Chatflow`など）を初期化する際に、必ず有効なAPIキーを渡してください。
+- `PropertiesService`を使用している場合、キー名（例: `"DIFY_CHATBOT_API_KEY"`）が正しいか、またスクリプトプロパティに値が設定されているか確認してください。
 
-- ファイルサイズを確認（上限は通常 15MB）
-- 対応ファイル形式を確認
-
-#### 4. ストリーミングエラー
-
+```javascript
+// ✅ 良い例
+const chatbot = new Chatbot({
+  apiKey: PropertiesService.getScriptProperties().getProperty("DIFY_CHATBOT_API_KEY"),
+  user: "test-user"
+});
 ```
-Error: ストリーミング応答の解析に失敗
-```
+
+#### 2. `Error: レート制限に達しました（60リクエスト/60秒）`
+
+**原因**: 短時間にAPIリクエストを送信しすぎて、Dify APIのレート制限（1分あたり60回）に達しました。
 
 **解決方法**:
+- APIを呼び出す頻度を調整してください。
+- `Utilities.sleep()` を使って、連続するリクエストの間に待機時間を設けることを検討してください。
 
-- `responseMode: 'blocking'` に変更
-- ネットワーク接続を確認
+#### 3. `Error: ファイルサイズが制限を超えています。最大サイズ: 50MB`
+
+**原因**: `uploadFile`メソッドでアップロードしようとしたファイルのサイズが50MBを超えています。
+
+**解決方法**:
+- アップロードするファイルのサイズを50MB未満にしてください。
+- `file.getSize()`メソッドを使って、アップロード前にファイルサイズを確認できます。
+
+#### 4. `Error: ストリーミングエラー: (詳細)` または `ストリーミングAPIエラー (HTTP 4xx/5xx): (詳細)`
+
+**原因**: ストリーミング接続中に問題が発生しました。ネットワークの不安定さや、Dify APIサーバー側の問題が考えられます。
+
+**解決方法**:
+- `response_mode`を `'blocking'` に変更して、問題が解決するか試してください。ストリーミングではなく、一度に全結果を受け取るモードに切り替わります。
+- ネットワーク接続が安定しているか確認してください。
+- 時間を置いてから再度実行してみてください。
 
 ### デバッグ方法
 
-```javascript
-// ログレベルの設定
-function enableDebugLogging() {
-  // DASクラス内部のログを有効化
-  console.log("デバッグモードを有効化");
-}
+DASライブラリは、実行中の主要なステップで`console.log`または`Logger.log`を使用して詳細なログを出力します。問題が発生した場合は、Apps Scriptの実行ログを確認するのが最も効果的です。
 
-// エラー詳細の確認
-function handleError(error) {
-  console.error("エラー詳細:", {
-    message: error.message,
-    stack: error.stack,
-    timestamp: new Date().toISOString(),
-  });
+**エラー詳細の確認方法**:
+
+`try...catch`ブロックを使用してエラーを捕捉し、エラーオブジェクトの内容をログに出力します。
+
+```javascript
+function testMyFunction() {
+  try {
+    const chatbot = new Chatbot({
+      apiKey: "invalid-key", // わざと間違ったキーを設定
+      user: "test-user"
+    });
+    // 何らかの処理
+  } catch (error) {
+    // エラーオブジェクト全体をログに出力
+    console.error("エラーが発生しました:", error);
+
+    // エラーメッセージを具体的に確認
+    console.error("エラーメッセージ:", error.message);
+
+    // エラーのスタックトレース（利用可能な場合）
+    if (error.stack) {
+      console.error("スタックトレース:", error.stack);
+    }
+  }
 }
 ```
+
+Apps Scriptエディタの「実行ログ」でこれらの出力を確認することで、問題の原因を特定しやすくなります。
 
 ## 開発者向け情報
 
