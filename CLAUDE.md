@@ -63,7 +63,7 @@ When a request for code review is made, the review must be conducted in Japanese
 
 ## Development Guidelines
 
-- Think in English, but generate responses in Japanese (思考は英語、回答の生成は日本語で行うように)
+- You nust think in English, but generate responses in Japanese (思考は英語、回答の生成は日本語で行うように)
 
 ## Workflow
 
