@@ -1122,8 +1122,8 @@ class ChatBase extends Dify {
       };
 
       // 推奨質問とオープニングメッセージも取得・保存
-      this.suggestedQuestions = appSite.suggested_questions || [];
-      this.openingStatement = appSite.opening_statement || "";
+      this.suggestedQuestions = appParameters.suggested_questions || [];
+      this.openingStatement = appParameters.opening_statement || "";
     } catch (error) {
       // 初期化時のエラーは警告として記録し、デフォルト値を設定
       Logger.log(
