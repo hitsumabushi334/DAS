@@ -15,6 +15,7 @@
 テキストを生成します。
 
 - **パラメータ:**
+
   - `inputs` (Object, 必須): アプリケーションで定義された変数を含むオブジェクト。
     - `query` (string, 必須): 生成の元となる入力テキスト。
   - `user` (string, 必須): ユーザー識別子。
@@ -49,12 +50,12 @@
   }
   ```
 
-#### `submitMessageFeedback(messageId, feedback, user)`
+#### `sendFeedback(messageId, feedback, user)`
 
 メッセージにフィードバックを送信します。
 
 - **パラメータ:**
-  - `messageId` (string, 必須): フィードバック対象のメッセージID。
+  - `messageId` (string, 必須): フィードバック対象のメッセージ ID。
   - `feedback` (Object, 必須): 評価内容。
     - `rating` (string): `'like'` または `'dislike'`。
     - `content` (string, 任意): フィードバックの具体的なテキスト。
