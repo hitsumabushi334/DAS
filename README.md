@@ -381,7 +381,12 @@ function getEnvironmentConfig() {
 
 ## API リファレンス
 
-Dify API リファレンス：https://docs.dify.ai/api-reference/%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8/%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8%E3%82%92%E9%80%81%E4%BF%A1
+- [Dify API リファレンス](https://docs.dify.ai/api-reference/%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8/%E3%83%81%E3%83%A3%E3%83%83%E3%83%88%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8%E3%82%92%E9%80%81%E4%BF%A1)
+
+- [ChatBot クラス](/Doc/Chatbot.md)
+- [Chatflow クラス](/Doc/Chatflow.md)
+- [Workflow クラス](/Doc/Workflow.md)
+- [Textgenerator クラス](/Doc/TextGenerator.md)
 
 ## トラブルシューティング
 
