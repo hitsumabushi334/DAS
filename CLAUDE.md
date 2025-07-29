@@ -11,9 +11,10 @@ Kiro-style Spec Driven Development implementation using claude code slash comman
   Work Policy: "Work Policy" Todo 1.
   Todo 1. "Specific task 1"\n 2. "Specific task 2"\n 3. "Specific task 3"
 - Check with users if anything is unclear (use human-in-the-loop tool)
-- Use web search if necessary
+- Use web search and Context7 MCP if necessary
 - Whenever modifying or changing a feature, design it before implementation.
 - Whenever modifying or changing a feature, design and implement the feature before implementation.
+- Use research-specialist subagent when you do your research.
 
 ### Development Principles
 
