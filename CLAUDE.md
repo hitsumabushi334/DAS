@@ -22,7 +22,6 @@ Kiro-style Spec Driven Development implementation using claude code slash comman
 2. **DRY**: Always make duplicated code into functions or modules. 3.
    **KISS**: Prefer simple solutions to complex solutions 4.
    **KISS**: Do not do anything other than what you are told to do, and do not implement anything unnecessary.
-   **_ Translated with www.DeepL.com/Translator (free version) _**
 
 ### Work Reporting Rules
 
