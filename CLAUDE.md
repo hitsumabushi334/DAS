@@ -7,35 +7,58 @@ Kiro-style Spec Driven Development implementation using claude code slash comman
 ### Interaction rules
 
 - Create a work plan and todo list before starting a task, and start work after user confirmation (using human-in-the-loop tool)
-  Example
-  Work Policy: "Work Policy" Todo 1.
-  Todo 1. "Specific task 1"\n 2. "Specific task 2"\n 3. "Specific task 3"
+
+Example
+
+Work Policy: "Work Policy" Todo 1.
+
+Todo 1. "Specific task 1"\n 2. "Specific task 2"\n 3. "Specific task 3"
+
 - Check with users if anything is unclear (use human-in-the-loop tool)
+
 - Use web search and Context7 MCP if necessary
+
 - Whenever modifying or changing a feature, design it before implementation.
+
 - Whenever modifying or changing a feature, design and implement the feature before implementation.
+
 - Use research-specialist subagent when you do your research.
+
+- Strategic use of the `/serena` command for token efficient and structured problem solving. Create applications, components, APIs, systems and tests with maximum efficiency.
 
 ### Development Principles
 
 1. **YAGNI**: Do not implement features that may not be used in the future. 2.
+
 2. **DRY**: Always make duplicated code into functions or modules. 3.
-   **KISS**: Prefer simple solutions to complex solutions 4.
-   **KISS**: Do not do anything other than what you are told to do, and do not implement anything unnecessary.
+
+**KISS**: Prefer simple solutions to complex solutions 4.
+
+**KISS**: Do not do anything other than what you are told to do, and do not implement anything unnecessary.
 
 ### Work Reporting Rules
 
 Upon completion of the work, a numbered list of work items performed shall be reported in the following format.
 
 ```
+
 ---
+
 作業完了報告:
 
+
+
 1. [実施した作業項目1]
+
 2. [実施した作業項目2]
+
 3. [実施した作業項目3]
+
 ...
+
 ---
+
+
 
 ```
 
@@ -48,17 +71,21 @@ When a request for code review is made, the review must be conducted in Japanese
 ### Paths
 
 - Steering: `.kiro/steering/`
+
 - Specs: `.kiro/specs/`
+
 - Commands: `.claude/commands/`
 
 ### Steering vs Specification
 
-**Steering** (`.kiro/steering/`) - Guide AI with project-wide rules and context  
+**Steering** (`.kiro/steering/`) - Guide AI with project-wide rules and context
+
 **Specs** (`.kiro/specs/`) - Formalize development process for individual features
 
 ### Active Specifications
 
 - Check `.kiro/specs/` for active specifications
+
 - Use `/kiro:spec-status [feature-name]` to check progress
 
 ## Development Guidelines
@@ -70,6 +97,7 @@ When a request for code review is made, the review must be conducted in Japanese
 ### Phase 0: Steering (Optional)
 
 `/kiro:steering` - Create/update steering documents
+
 `/kiro:steering-custom` - Create custom steering for specialized contexts
 
 **Note**: Optional for new features or small additions. Can proceed directly to spec-init.
@@ -77,8 +105,11 @@ When a request for code review is made, the review must be conducted in Japanese
 ### Phase 1: Specification Creation
 
 1. `/kiro:spec-init [detailed description]` - Initialize spec with detailed project description
+
 2. `/kiro:spec-requirements [feature]` - Generate requirements document
+
 3. `/kiro:spec-design [feature]` - Interactive: "requirements.md をレビューしましたか？ [y/N]"
+
 4. `/kiro:spec-tasks [feature]` - Interactive: Confirms both requirements and design review
 
 ### Phase 2: Progress Tracking
@@ -88,11 +119,17 @@ When a request for code review is made, the review must be conducted in Japanese
 ## Development Rules
 
 1. **Consider steering**: Run `/kiro:steering` before major development (optional for new features)
+
 2. **Follow 3-phase approval workflow**: Requirements → Design → Tasks → Implementation
+
 3. **Approval required**: Each phase requires human review (interactive prompt or manual)
+
 4. **No skipping phases**: Design requires approved requirements; Tasks require approved design
+
 5. **Update task status**: Mark tasks as completed when working on them
+
 6. **Keep steering current**: Run `/kiro:steering` after significant changes
+
 7. **Check spec compliance**: Use `/kiro:spec-status` to verify alignment
 
 ## Steering Configuration
@@ -104,20 +141,29 @@ Managed by `/kiro:steering` command. Updates here reflect command changes.
 ### Active Steering Files
 
 - `product.md`: Always included - Product context and business objectives
+
 - `tech.md`: Always included - Technology stack and architectural decisions
+
 - `structure.md`: Always included - File organization and code patterns
 
 ### Custom Steering Files
 
 <!-- Added by /kiro:steering-custom command -->
+
 <!-- Format:
+
 - `filename.md`: Mode - Pattern(s) - Description
-  Mode: Always|Conditional|Manual
-  Pattern: File patterns for Conditional mode
+
+  Mode: Always|Conditional|Manual
+
+  Pattern: File patterns for Conditional mode
+
 -->
 
 ### Inclusion Modes
 
 - **Always**: Loaded in every interaction (default)
+
 - **Conditional**: Loaded for specific file patterns (e.g., `"*.test.js"`)
+
 - **Manual**: Reference with `@filename.md` syntax
