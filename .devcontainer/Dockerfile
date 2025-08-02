@@ -24,7 +24,8 @@ RUN apt update && apt install -y less \
 # ---- START: Added for uv installation ----
 # Install uv (A fast Python package installer)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    mv /root/.local/bin/uv /usr/local/bin/uv
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx
 # ---- END: Added for uv installation ----
 
 # Ensure default node user has access to /usr/local/share

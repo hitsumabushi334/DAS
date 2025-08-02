@@ -6,9 +6,15 @@
       "WebFetch(domain:zenn.dev)",
       "Bash(ls:*)",
       "WebFetch(domain:docs.dify.ai)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__serena__onboarding",
+      "mcp__serena__list_dir",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_file",
+      "mcp__serena__write_memory"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "human-in-the-loop",
     "playwright"
@@ -25,6 +31,5 @@
         ]
       }
     ]
-  },
-  "enableAllProjectMcpServers": true
+  }
 }
