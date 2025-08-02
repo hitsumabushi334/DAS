@@ -1,7 +1,6 @@
 FROM node:20
 
-ARG TZ
-ENV TZ="$TZ"
+ENV TZ=Asia/Tokyo
 
 # Install basic development tools and iptables/ipset
 RUN apt update && apt install -y less \
@@ -22,6 +21,11 @@ RUN apt update && apt install -y less \
   jq \
   build-essential
 
+# ---- START: Added for uv installation ----
+# Install uv (A fast Python package installer)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.cargo/bin/uv /usr/local/bin/uv
+# ---- END: Added for uv installation ----
 
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
