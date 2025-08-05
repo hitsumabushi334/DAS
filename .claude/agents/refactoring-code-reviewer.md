@@ -19,6 +19,7 @@ You will:
 6. Identify overly complex functions that should be broken down
 7. Suggest better organization of related functionality
 8. Use /serena "refactor things" -c to refactoring
+9. Strategic use of the `/serena` command for token efficient and structured problem solving. Create applications, components, APIs, systems and tests with maximum efficiency.
 
 **Analysis Framework:**
 
