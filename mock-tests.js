@@ -45,7 +45,7 @@ if (typeof Chatbot === "undefined") {
   // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   class Chatbot {
     constructor(apiKey, baseUrl) {
-      this.apiKey = apiKey;
+      this.__apiKey = apiKey;
       this.baseUrl = baseUrl || "https://api.dify.ai/v1";
 
       // キャッシュとレート制限プロパティの初期化
@@ -82,7 +82,7 @@ if (typeof Chatbot === "undefined") {
       }
       return this._makeRequest(
         `/conversations/${conversationId}/messages`,
-        "GET",
+        "GET"
       );
     }
 
@@ -96,7 +96,7 @@ if (typeof Chatbot === "undefined") {
         throw new Error(
           `ファイルサイズが制限を超えています。最大サイズ: ${
             TEST_CONSTANTS.MAX_FILE_SIZE / (1024 * 1024)
-          }MB`,
+          }MB`
         );
       }
 
@@ -111,7 +111,7 @@ if (typeof Chatbot === "undefined") {
 
       if (rating !== "like" && rating !== "dislike" && rating !== "null") {
         throw new Error(
-          `rating は "like" または "dislike"または "null" である必要があります`,
+          `rating は "like" または "dislike"または "null" である必要があります`
         );
       }
 
@@ -139,7 +139,7 @@ if (typeof Chatbot === "undefined") {
       return Object.keys(params)
         .map(
           (key) =>
-            `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
+            `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
         )
         .join("&");
     }
@@ -158,7 +158,7 @@ if (typeof Chatbot === "undefined") {
 
       // 古いリクエストを削除
       this._rateLimitRequests = this._rateLimitRequests.filter(
-        (timestamp) => now - timestamp < this._rateLimitWindow,
+        (timestamp) => now - timestamp < this._rateLimitWindow
       );
 
       // レート制限チェック
@@ -166,7 +166,7 @@ if (typeof Chatbot === "undefined") {
         throw new Error(
           `レート制限に達しました。${this._rateLimitWindow / 1000}秒間に${
             this._rateLimitMax
-          }リクエストを超えています`,
+          }リクエストを超えています`
         );
       }
 
@@ -333,7 +333,7 @@ class MockTestFramework {
 
     if (expectedError && !actualError.message.includes(expectedError)) {
       throw new Error(
-        `期待されるエラー: ${expectedError}, 実際のエラー: ${actualError.message}`,
+        `期待されるエラー: ${expectedError}, 実際のエラー: ${actualError.message}`
       );
     }
   }
@@ -344,7 +344,7 @@ class MockTestFramework {
   assertHasProperty(obj, property, message = "") {
     if (!(property in obj)) {
       throw new Error(
-        `オブジェクトにプロパティ '${property}' が存在しません. ${message}`,
+        `オブジェクトにプロパティ '${property}' が存在しません. ${message}`
       );
     }
   }
@@ -358,7 +358,11 @@ class MockTestFramework {
     console.log(`成功: ${this.passedTests}`);
     console.log(`失敗: ${this.failedTests}`);
     console.log(
-      `成功率: ${this.totalTests > 0 ? ((this.passedTests / this.totalTests) * 100).toFixed(2) : 0}%`,
+      `成功率: ${
+        this.totalTests > 0
+          ? ((this.passedTests / this.totalTests) * 100).toFixed(2)
+          : 0
+      }%`
     );
 
     if (this.failedTests > 0) {
@@ -373,7 +377,7 @@ class MockTestFramework {
     console.log("\n=== 詳細テスト結果 ===");
     this.testResults.forEach((result, index) => {
       console.log(
-        `${index + 1}. ${result.status === "PASS" ? "✅" : "❌"} ${result.name}`,
+        `${index + 1}. ${result.status === "PASS" ? "✅" : "❌"} ${result.name}`
       );
     });
 
@@ -426,7 +430,9 @@ class MockChatbot extends Chatbot {
     if (mock) {
       if (mock.statusCode >= 400) {
         throw new Error(
-          `API エラー (HTTP ${mock.statusCode}): ${JSON.stringify(mock.response)}`,
+          `API エラー (HTTP ${mock.statusCode}): ${JSON.stringify(
+            mock.response
+          )}`
         );
       }
       return mock.response;
@@ -492,14 +498,21 @@ class ComprehensiveMockTestSuite {
 
     // 1. コンストラクタテスト - 正常ケース
     this.framework.test("コンストラクタ - 正常ケース", () => {
-      const chatbot = new Chatbot({ apiKey: "test-api-key", user: "test-user", baseUrl: "https://api.dify.ai/v1" });
+      const chatbot = new Chatbot({
+        apiKey: "test-api-key",
+        user: "test-user",
+        baseUrl: "https://api.dify.ai/v1",
+      });
       this.framework.assertEqual(chatbot.apiKey, "test-api-key");
       this.framework.assertEqual(chatbot.baseUrl, "https://api.dify.ai/v1");
     });
 
     // 2. コンストラクタテスト - デフォルトURL
     this.framework.test("コンストラクタ - デフォルトURL", () => {
-      const chatbot = new Chatbot({ apiKey: "test-api-key", user: "test-user" });
+      const chatbot = new Chatbot({
+        apiKey: "test-api-key",
+        user: "test-user",
+      });
       this.framework.assertEqual(chatbot.baseUrl, "https://api.dify.ai/v1");
     });
 
@@ -508,17 +521,17 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const result = chatbot.sendMessage("こんにちは", "user123");
       this.framework.assertHasProperty(result, "answer");
       this.framework.assertTrue(
         typeof result.answer === "string",
-        "answerが文字列型である",
+        "answerが文字列型である"
       );
       this.framework.assertTrue(
         result.answer.length > 0,
-        "answerが空文字列でない",
+        "answerが空文字列でない"
       );
     });
 
@@ -527,7 +540,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const options = {
         inputs: { variable1: "value1" },
@@ -537,7 +550,7 @@ class ComprehensiveMockTestSuite {
       const result = chatbot.sendMessage(
         "テストメッセージ",
         "user456",
-        options,
+        options
       );
       this.framework.assertHasProperty(result, "answer");
     });
@@ -547,23 +560,23 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       chatbot.setMockResponse(
         "/conversations?user=user123&limit=20&sort_by=-updated_at",
         "GET",
-        this.framework.mockData.conversations,
+        this.framework.mockData.conversations
       );
       const result = chatbot.getConversations("user123");
       this.framework.assertHasProperty(result, "data");
       this.framework.assertTrue(
         Array.isArray(result.data),
-        "dataが配列型である",
+        "dataが配列型である"
       );
       this.framework.assertHasProperty(result, "has_more");
       this.framework.assertTrue(
         typeof result.has_more === "boolean",
-        "has_moreがboolean型である",
+        "has_moreがboolean型である"
       );
     });
 
@@ -572,12 +585,12 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       chatbot.setMockResponse(
         "/conversations/conv-123/messages?user=user123",
         "GET",
-        { data: [{ id: "msg-1", query: "テスト", answer: "回答" }] },
+        { data: [{ id: "msg-1", query: "テスト", answer: "回答" }] }
       );
       const result = chatbot.getConversationMessages("conv-123", "user123");
       this.framework.assertHasProperty(result, "data");
@@ -595,7 +608,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       this.framework.assertThrows(() => {
         chatbot.sendMessage("", "user123");
@@ -607,7 +620,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       this.framework.assertThrows(() => {
         chatbot.sendMessage(null, "user123");
@@ -619,7 +632,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const longMessage = "あ".repeat(TEST_CONSTANTS.LONG_MESSAGE_LENGTH);
       const result = chatbot.sendMessage(longMessage, "user123");
@@ -631,12 +644,12 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       chatbot.setMockResponse(
         `/conversations?user=user123&limit=${TEST_CONSTANTS.CONVERSATION_LIMIT_MAX}&sort_by=-updated_at`,
         "GET",
-        this.framework.mockData.conversations,
+        this.framework.mockData.conversations
       );
       const result = chatbot.getConversations("user123", {
         limit: TEST_CONSTANTS.CONVERSATION_LIMIT_MAX,
@@ -649,12 +662,12 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       chatbot.setMockResponse(
         `/conversations?user=user123&limit=${TEST_CONSTANTS.CONVERSATION_LIMIT_OVER}&sort_by=-updated_at`,
         "GET",
-        this.framework.mockData.conversations,
+        this.framework.mockData.conversations
       );
       const result = chatbot.getConversations("user123", {
         limit: TEST_CONSTANTS.CONVERSATION_LIMIT_OVER,
@@ -667,7 +680,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const specialMessage = "こんにちは！@#$%^&*()_+-=[]{}|;:,.<>?";
       const result = chatbot.sendMessage(specialMessage, "user123");
@@ -686,13 +699,13 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "invalid-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       chatbot.setMockResponse(
         "/chat-messages",
         "POST",
         this.framework.mockData.errors.unauthorized,
-        401,
+        401
       );
       this.framework.assertThrows(() => {
         chatbot.sendMessage("テスト", "user123");
@@ -704,13 +717,13 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       chatbot.setMockResponse(
         "/chat-messages",
         "POST",
         this.framework.mockData.errors.serverError,
-        500,
+        500
       );
       this.framework.assertThrows(() => {
         chatbot.sendMessage("テスト", "user123");
@@ -722,7 +735,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       this.framework.assertThrows(() => {
         chatbot.sendFeedback("msg-123", "invalid-rating", "user123");
@@ -734,7 +747,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       this.framework.assertThrows(() => {
         chatbot.getConversationMessages("", "user123");
@@ -746,7 +759,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       this.framework.assertThrows(() => {
         chatbot.uploadFile(null, "user123");
@@ -758,7 +771,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       this.framework.assertThrows(() => {
         chatbot.textToAudio("user123", {});
@@ -777,7 +790,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       // 複数回リクエストを送信してもエラーにならないことを確認
       for (let i = 0; i < TEST_CONSTANTS.RATE_LIMIT_TEST_COUNT; i++) {
@@ -785,7 +798,7 @@ class ComprehensiveMockTestSuite {
       }
       this.framework.assertTrue(
         true,
-        `${TEST_CONSTANTS.RATE_LIMIT_TEST_COUNT}回のリクエストが正常に処理された`,
+        `${TEST_CONSTANTS.RATE_LIMIT_TEST_COUNT}回のリクエストが正常に処理された`
       );
     });
 
@@ -795,7 +808,7 @@ class ComprehensiveMockTestSuite {
       // レート制限配列を手動で満タンにする
       const now = Date.now();
       chatbot._rateLimitRequests = new Array(
-        TEST_CONSTANTS.RATE_LIMIT_MAX,
+        TEST_CONSTANTS.RATE_LIMIT_MAX
       ).fill(now);
 
       this.framework.assertThrows(() => {
@@ -809,14 +822,14 @@ class ComprehensiveMockTestSuite {
       // 古いタイムスタンプでリクエスト配列を埋める
       const oldTime = Date.now() - TEST_CONSTANTS.RATE_LIMIT_WINDOW;
       chatbot._rateLimitRequests = new Array(
-        TEST_CONSTANTS.RATE_LIMIT_MAX,
+        TEST_CONSTANTS.RATE_LIMIT_MAX
       ).fill(oldTime);
 
       // 現在時刻でチェック実行（古いリクエストは削除されるはず）
       chatbot._checkRateLimit();
       this.framework.assertTrue(
         chatbot._rateLimitRequests.length <= 1,
-        "古いリクエストが削除された",
+        "古いリクエストが削除された"
       );
     });
   }
@@ -832,13 +845,13 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const url = "/conversations?user=user123&limit=20&sort_by=-updated_at";
       chatbot.setMockResponse(
         url,
         "GET",
-        this.framework.mockData.conversations,
+        this.framework.mockData.conversations
       );
 
       // 1回目のリクエスト
@@ -853,7 +866,7 @@ class ComprehensiveMockTestSuite {
       this.framework.assertEqual(
         firstRequestCount,
         secondRequestCount,
-        "キャッシュが機能している",
+        "キャッシュが機能している"
       );
     });
 
@@ -871,7 +884,7 @@ class ComprehensiveMockTestSuite {
       // 期限切れ前の確認：キャッシュが存在
       this.framework.assertTrue(
         Object.keys(chatbot._cache).length > 0,
-        "キャッシュデータが存在",
+        "キャッシュデータが存在"
       );
 
       // _getCachedDataを呼び出して期限切れキャッシュの削除を確認
@@ -879,13 +892,13 @@ class ComprehensiveMockTestSuite {
       this.framework.assertEqual(
         cachedData,
         null,
-        "期限切れキャッシュデータはnullが返される",
+        "期限切れキャッシュデータはnullが返される"
       );
 
       // 期限切れ後の確認：キャッシュが削除されている
       this.framework.assertTrue(
         !(testUrl in chatbot._cache),
-        "期限切れキャッシュが削除されている",
+        "期限切れキャッシュが削除されている"
       );
 
       // 有効なキャッシュの確認テスト
@@ -900,7 +913,7 @@ class ComprehensiveMockTestSuite {
       this.framework.assertEqual(
         validData.valid,
         "data",
-        "有効なキャッシュデータが取得できる",
+        "有効なキャッシュデータが取得できる"
       );
     });
 
@@ -909,7 +922,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // POSTリクエストを複数回実行
@@ -922,7 +935,7 @@ class ComprehensiveMockTestSuite {
       // POSTはキャッシュされないため、リクエスト回数が増加するはず
       this.framework.assertTrue(
         secondRequestCount > firstRequestCount,
-        "POSTリクエストはキャッシュされない",
+        "POSTリクエストはキャッシュされない"
       );
     });
   }
@@ -959,7 +972,7 @@ class ComprehensiveMockTestSuite {
       };
 
       const result = chatbot._parseStreamingResponse(
-        mockResponseWithInvalidJson,
+        mockResponseWithInvalidJson
       );
       this.framework.assertHasProperty(result, "answer");
     });
@@ -1005,7 +1018,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // 50MBを超える模擬ファイル
@@ -1023,7 +1036,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const normalFile = {
@@ -1034,7 +1047,7 @@ class ComprehensiveMockTestSuite {
       chatbot.setMockResponse(
         "/files/upload",
         "POST",
-        this.framework.mockData.fileUpload,
+        this.framework.mockData.fileUpload
       );
 
       try {
@@ -1052,7 +1065,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       try {
@@ -1069,7 +1082,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       try {
@@ -1110,7 +1123,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const maliciousInput = "'; DROP TABLE users; --";
 
@@ -1124,7 +1137,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const xssInput = "<script>alert('XSS')</script>";
 
@@ -1137,7 +1150,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // プロトタイプ汚染を試みる危険なパラメータ
@@ -1155,7 +1168,7 @@ class ComprehensiveMockTestSuite {
       // プロトタイプ汚染が発生していないことを確認
       this.framework.assertTrue(
         typeof Object.prototype.polluted === "undefined",
-        "プロトタイプ汚染が発生していない",
+        "プロトタイプ汚染が発生していない"
       );
     });
 
@@ -1164,7 +1177,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const ldapInjection = "admin)(|(password=*";
@@ -1177,7 +1190,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const nosqlInjection = "admin'; return db.users.find(); //";
@@ -1190,7 +1203,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // 改行文字を含む悪意のある入力
@@ -1204,7 +1217,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const pathTraversal = "../../../etc/passwd";
@@ -1217,7 +1230,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const commandInjection = "test; rm -rf /; echo vulnerable";
@@ -1230,7 +1243,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const responseSplitting =
@@ -1244,7 +1257,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // 非常に大きなペイロードでDoS攻撃を試みる
@@ -1271,7 +1284,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // 大きなinputsオブジェクトを含むリクエスト
@@ -1291,21 +1304,21 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // 複数のリクエストを並行実行
       const promises = [];
       for (let i = 0; i < TEST_CONSTANTS.CONCURRENT_REQUEST_COUNT; i++) {
         promises.push(
-          Promise.resolve(chatbot.sendMessage(`テスト${i}`, "user123")),
+          Promise.resolve(chatbot.sendMessage(`テスト${i}`, "user123"))
         );
       }
 
       // すべて正常に処理されることを確認
       this.framework.assertTrue(
         promises.length === TEST_CONSTANTS.CONCURRENT_REQUEST_COUNT,
-        `${TEST_CONSTANTS.CONCURRENT_REQUEST_COUNT}つの並行リクエストが作成された`,
+        `${TEST_CONSTANTS.CONCURRENT_REQUEST_COUNT}つの並行リクエストが作成された`
       );
     });
 
@@ -1324,7 +1337,7 @@ class ComprehensiveMockTestSuite {
 
       this.framework.assertTrue(
         Object.keys(chatbot._cache).length <= TEST_CONSTANTS.CACHE_STRESS_COUNT,
-        "キャッシュサイズが管理されている",
+        "キャッシュサイズが管理されている"
       );
     });
   }
@@ -1340,7 +1353,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const unicodeMessage = "こんにちは世界 🌍 тест مرحبا 🚀";
 
@@ -1353,7 +1366,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const emojiMessage = "今日はとても良い天気です！ ☀️🌈🦋🌸";
 
@@ -1366,7 +1379,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
       const multilineMessage = "1行目\n2行目\r\n3行目\r4行目";
 
@@ -1387,11 +1400,11 @@ class ComprehensiveMockTestSuite {
       const queryString = chatbot._buildQueryString(params);
       this.framework.assertTrue(
         queryString.includes("%20"),
-        "スペースがエスケープされている",
+        "スペースがエスケープされている"
       );
       this.framework.assertTrue(
         queryString.includes("%26"),
-        "&記号がエスケープされている",
+        "&記号がエスケープされている"
       );
     });
 
@@ -1400,7 +1413,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const result = chatbot.sendMessage("テスト", "user123", {
@@ -1421,7 +1434,7 @@ class ComprehensiveMockTestSuite {
 
       this.framework.assertTrue(
         chatbot._rateLimitRequests.length >= 1,
-        "タイムスタンプが正常に記録された",
+        "タイムスタンプが正常に記録された"
       );
     });
 
@@ -1430,7 +1443,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       const circularObj = { prop: "value" };
@@ -1445,7 +1458,7 @@ class ComprehensiveMockTestSuite {
         this.framework.assertTrue(
           error.message.includes("circular") ||
             error.message.includes("Converting"),
-          "循環参照エラーが適切に処理された",
+          "循環参照エラーが適切に処理された"
         );
       }
     });
@@ -1455,7 +1468,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       // 非同期処理のシミュレーション：即座に結果を検証
@@ -1464,7 +1477,7 @@ class ComprehensiveMockTestSuite {
       this.framework.assertHasProperty(result, "answer");
       this.framework.assertTrue(
         typeof result.answer === "string",
-        "非同期処理の結果がanswer文字列を含んでいる",
+        "非同期処理の結果がanswer文字列を含んでいる"
       );
 
       // 非同期シナリオをシミュレートするための追加テスト
@@ -1473,7 +1486,7 @@ class ComprehensiveMockTestSuite {
         callbackExecuted = true;
         const asyncResult = chatbot.sendMessage(
           "非同期コールバック",
-          "user123",
+          "user123"
         );
         return asyncResult;
       };
@@ -1482,7 +1495,7 @@ class ComprehensiveMockTestSuite {
       const asyncResult = simulateAsyncCallback();
       this.framework.assertTrue(
         callbackExecuted,
-        "コールバック関数が実行された",
+        "コールバック関数が実行された"
       );
       this.framework.assertHasProperty(asyncResult, "answer");
     });
@@ -1505,7 +1518,7 @@ class ComprehensiveMockTestSuite {
       const chatbot = new MockChatbot(
         "test-key",
         "https://api.test.com",
-        this.framework,
+        this.framework
       );
 
       try {
@@ -1513,7 +1526,7 @@ class ComprehensiveMockTestSuite {
       } catch (error) {
         this.framework.assertTrue(
           error.message.includes("必須パラメータ"),
-          "日本語エラーメッセージが表示される",
+          "日本語エラーメッセージが表示される"
         );
       }
     });

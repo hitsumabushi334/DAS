@@ -72,8 +72,14 @@ class Dify {
     }
 
     // 基本設定
-    this.apiKey = options.apiKey;
+    this.__apiKey = options.apiKey;
     this.baseUrl = options.baseUrl || "https://api.dify.ai/v1";
+    
+    // HTTPS強制化の追加
+    if (!this.baseUrl.startsWith('https://')) {
+      throw new Error('baseUrlはHTTPSでなければなりません');
+    }
+    
     this.user = options.user;
 
     // キャッシュ設定
@@ -271,6 +277,32 @@ class Dify {
       throw new Error(`fileは必須パラメータです`);
     }
 
+    // ファイル形式の検証
+    const allowedMimeTypes = [
+      'application/pdf', 
+      'text/plain', 
+      'image/jpeg', 
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ];
+    
+    const fileType = file.getContentType();
+    if (!allowedMimeTypes.includes(fileType)) {
+      throw new Error(`サポートされていないファイル形式です: ${fileType}`);
+    }
+
+    // ファイル名の検証
+    const fileName = file.getName();
+    if (!/^[a-zA-Z0-9._-]+$/.test(fileName)) {
+      throw new Error('ファイル名に無効な文字が含まれています');
+    }
+
     // ファイルサイズ検証 (50MB制限)
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
     if (file.getBytes().length && file.getBytes().length > MAX_FILE_SIZE) {
@@ -289,7 +321,7 @@ class Dify {
     const options = {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + this.apiKey,
+        Authorization: "Bearer " + this.__apiKey,
       },
       payload: formData,
       muteHttpExceptions: true,
@@ -360,7 +392,7 @@ class Dify {
     const requestOptions = {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + this.apiKey,
+        Authorization: "Bearer " + this.__apiKey,
         "Content-Type": "application/json",
       },
       payload: JSON.stringify(payload),
@@ -507,7 +539,7 @@ class Dify {
         const options = {
           method: "POST",
           headers: {
-            Authorization: "Bearer " + this.apiKey,
+            Authorization: "Bearer " + this.__apiKey,
             "Content-Type": "application/json",
           },
           payload: JSON.stringify(payload),
@@ -558,7 +590,7 @@ class Dify {
     const options = {
       method: method,
       headers: {
-        Authorization: "Bearer " + this.apiKey,
+        Authorization: "Bearer " + this.__apiKey,
         "Content-Type": "application/json",
       },
       muteHttpExceptions: true,
@@ -699,6 +731,22 @@ class Dify {
    * @param {boolean} sanitizeApiKey - APIキーをサニタイズするかどうか（デフォルト: false）
    * @throws {Error} HTTPエラー例外
    */
+  /**
+   * メッセージからAPIキーやセンシティブ情報をサニタイズ（内部メソッド）
+   * @param {string} message - サニタイズ対象のメッセージ
+   * @returns {string} サニタイズ済みメッセージ
+   * @private
+   */
+  _sanitizeMessage(message) {
+    if (typeof message !== 'string') return message;
+    
+    return message
+      .replace(/Bearer\s+[^\s]+/gi, "Bearer [REDACTED]")
+      .replace(/apiKey["']?\s*:\s*["'][^"']+["']/gi, 'apiKey: "[REDACTED]"')
+      .replace(/api[_-]?key["']?\s*:\s*["'][^"']+["']/gi, 'api_key: "[REDACTED]"')
+      .replace(new RegExp(this.__apiKey, 'gi'), '[REDACTED]');
+  }
+
   _handleHttpError(response, context, sanitizeApiKey = false) {
     const responseCode = response.getResponseCode();
     const errorInfo = this._parseErrorResponse(response);
@@ -706,10 +754,7 @@ class Dify {
     let errorMessage = errorInfo.message || errorInfo.error || "不明なエラー";
 
     if (sanitizeApiKey) {
-      errorMessage = errorMessage.replace(
-        /Bearer\s+[^\s]+/gi,
-        "Bearer [REDACTED]"
-      );
+      errorMessage = this._sanitizeMessage(errorMessage);
     }
 
     throw new Error(`${context}エラー (HTTP ${responseCode}): ${errorMessage}`);
@@ -1017,7 +1062,7 @@ class ChatBase extends Dify {
     const options = {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + this.apiKey,
+        Authorization: "Bearer " + this.__apiKey,
       },
       payload: formData,
       muteHttpExceptions: true,
