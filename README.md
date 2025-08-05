@@ -221,14 +221,14 @@ function workflowExample() {
 
   // ワークフロー実行
   const response = workflow.runWorkflow(
-    {
-      inputs: {
+   {
         text: "要約してください：長い文章...",
         language: "ja",
       },
+    "user-123",
+   {
       responseMode: "blocking",
-    },
-    "user-123"
+      },
   );
 
   Logger.log("ワークフロー結果:", response.data.outputs);
@@ -480,11 +480,11 @@ Apps Script エディタの「実行ログ」でこれらの出力を確認す�
 DAS-Project/
 ├── das-unified-classes.js   # メインライブラリファイル
 ├── example.js              # 使用例
-├── README.md               # このファイル
-└── tests/                  # テストファイル
-    ├── mock-tests.js
-    ├── real-api-tests.js
-    └── ...
+├── README.md   # このファイル
+└─ difyClassLibrary.js # ライブラリ用のファイル
+├─ mock-tests.js
+├─ real-api-tests.js
+└─ ...
 ```
 
 ### コントリビューション
