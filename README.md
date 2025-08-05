@@ -221,14 +221,14 @@ function workflowExample() {
 
   // ワークフロー実行
   const response = workflow.runWorkflow(
-    {
-      inputs: {
+   {
         text: "要約してください：長い文章...",
         language: "ja",
       },
+    "user-123",
+   {
       responseMode: "blocking",
-    },
-    "user-123"
+      },
   );
 
   Logger.log("ワークフロー結果:", response.data.outputs);
